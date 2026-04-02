@@ -8,23 +8,18 @@ type StatCardProps = {
 };
 
 const accentClasses: Record<NonNullable<StatCardProps['accent']>, string> = {
-  blue: 'from-brand-500/20 to-transparent text-brand-50',
-  mint: 'from-emerald-500/20 to-transparent text-emerald-50',
-  amber: 'from-amber-500/20 to-transparent text-amber-50',
-  rose: 'from-rose-500/20 to-transparent text-rose-50',
+  blue: 'border-[#adc6ff]/30 bg-[#131b2e] text-brand-50',
+  mint: 'border-emerald-500/20 bg-[#131b2e] text-emerald-50',
+  amber: 'border-amber-500/20 bg-[#131b2e] text-amber-50',
+  rose: 'border-rose-500/20 bg-[#131b2e] text-rose-50',
 };
 
 export function StatCard({ label, value, hint, accent = 'blue' }: StatCardProps): JSX.Element {
   return (
-    <div className="app-panel relative overflow-hidden p-5">
-      <div
-        className={['absolute inset-0 bg-gradient-to-br opacity-80', accentClasses[accent]].join(
-          ' ',
-        )}
-      />
-      <div className="relative">
+    <div className={['rounded-xl border p-5', accentClasses[accent]].join(' ')}>
+      <div>
         <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">{label}</p>
-        <p className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-slate-50">{value}</p>
+        <p className="mt-4 text-3xl font-extrabold tracking-tight text-slate-50">{value}</p>
         {hint ? <p className="mt-3 text-sm text-slate-400">{hint}</p> : null}
       </div>
     </div>

@@ -3,12 +3,18 @@
 import {
   Background,
   Controls,
+  type EdgeMarker,
+  Handle,
+  MiniMap,
   MarkerType,
+  Position,
+  type ReactFlowInstance,
   ReactFlow,
   type Edge,
   type Node,
   type NodeMouseHandler,
 } from '@xyflow/react';
+import { useEffect, useMemo, useState } from 'react';
 
 const fallbackNodes = [
   {
@@ -56,6 +62,13 @@ type GraphDisplayNode = {
   ruleCount?: number;
 };
 
+type GraphNodeData = {
+  title: string;
+  subtitle: string;
+  meta: string;
+  originalNode: GraphDisplayNode;
+};
+
 type GraphPreviewProps = {
   nodes?: GraphDisplayNode[];
   edges?: Array<{
@@ -68,7 +81,96 @@ type GraphPreviewProps = {
     namespace?: string | null;
   }>;
   onNodeSelect?: (node: GraphDisplayNode) => void;
+  selectedNodeId?: string | null;
+  fitViewSignal?: number;
 };
+
+function iconForNodeType(type: string): string {
+  if (type === 'subject') {
+    return '◎';
+  }
+
+  if (type === 'binding') {
+    return '⇄';
+  }
+
+  if (type === 'role') {
+    return '◆';
+  }
+
+  return '◌';
+}
+
+function edgeLabelForType(type?: string): string {
+  if (type === 'subject_binding') {
+    return 'bound';
+  }
+
+  if (type === 'binding_role') {
+    return 'roleRef';
+  }
+
+  if (type === 'role_permission') {
+    return 'grants';
+  }
+
+  return 'path';
+}
+
+function formatNodeData(node: GraphDisplayNode): GraphNodeData {
+  return {
+    title: node.label,
+    subtitle: node.kind ?? node.type,
+    meta: node.namespace ? `ns:${node.namespace}` : node.scopeType,
+    originalNode: node,
+  };
+}
+
+function CustomGraphNode({ data }: { data: GraphNodeData }): JSX.Element {
+  const node = data.originalNode;
+
+  return (
+    <div className="min-w-[236px] rounded-2xl bg-transparent px-1 py-1 text-left text-white">
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!h-2 !w-2 !border-0 !bg-transparent !opacity-0"
+      />
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-sm font-semibold text-white/90 ring-1 ring-white/10">
+          {iconForNodeType(node.type)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold tracking-[-0.01em] text-white">
+            {data.title}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-300">
+            <span>{data.subtitle}</span>
+            <span className="h-1 w-1 rounded-full bg-slate-500" />
+            <span>{data.meta}</span>
+          </div>
+          {node.badges && node.badges.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {node.badges.slice(0, 3).map((badge) => (
+                <span
+                  key={badge}
+                  className="rounded-full border border-white/10 bg-black/20 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-slate-200"
+                >
+                  {badge}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!h-2 !w-2 !border-0 !bg-transparent !opacity-0"
+      />
+    </div>
+  );
+}
 
 function columnForType(type: string): number {
   if (type === 'subject') {
@@ -86,7 +188,11 @@ function columnForType(type: string): number {
   return 3;
 }
 
-function styleForType(type: string, scopeType: string): Record<string, string | number> {
+function styleForType(
+  type: string,
+  scopeType: string,
+  selected: boolean,
+): Record<string, string | number> {
   const palette =
     type === 'subject'
       ? { background: '#0f172a', border: '#334155' }
@@ -99,36 +205,113 @@ function styleForType(type: string, scopeType: string): Record<string, string | 
   return {
     background: palette.background,
     color: '#ffffff',
-    border: `1px solid ${scopeType === 'cluster' ? '#f59e0b' : palette.border}`,
+    border: `1px solid ${selected ? '#22d3ee' : scopeType === 'cluster' ? '#f59e0b' : palette.border}`,
     padding: 12,
-    borderRadius: 12,
-    width: 220,
+    borderRadius: 14,
+    boxShadow: selected
+      ? '0 0 0 1px rgba(34,211,238,0.25), 0 16px 38px rgba(2,6,23,0.45)'
+      : '0 10px 24px rgba(2,6,23,0.35)',
+    width: 252,
+    fontSize: 12,
+    lineHeight: 1.35,
   };
 }
 
-export function GraphPreview({ nodes, edges, onNodeSelect }: GraphPreviewProps): JSX.Element {
-  const flowNodes: Node[] =
-    nodes && nodes.length > 0
-      ? nodes.map((node, index) => ({
-          id: node.id,
-          position: { x: columnForType(node.type) * 280, y: 40 + (index % 6) * 110 },
-          data: {
-            label: [node.label, node.namespace ? `ns:${node.namespace}` : node.scopeType].join(
-              ' • ',
-            ),
-            originalNode: node,
-          },
-          style: styleForType(node.type, node.scopeType),
-        }))
-      : fallbackNodes;
+function layoutNodes(nodes: GraphDisplayNode[]): Node[] {
+  const groupedByType = new Map<string, GraphDisplayNode[]>();
 
-  const flowEdges: Edge[] =
-    edges && edges.length > 0
-      ? edges.map((edge) => ({
-          ...edge,
-          markerEnd: { type: MarkerType.ArrowClosed },
-        }))
-      : fallbackEdges;
+  for (const node of nodes) {
+    const bucket = groupedByType.get(node.type) ?? [];
+    bucket.push(node);
+    groupedByType.set(node.type, bucket);
+  }
+
+  return nodes.map((node) => {
+    const bucket = groupedByType.get(node.type) ?? [node];
+    const index = bucket.findIndex((item) => item.id === node.id);
+    const column = columnForType(node.type);
+    const rowHeight = node.type === 'permission_summary' ? 120 : 132;
+    const x = column * 340;
+    const y = 56 + index * rowHeight;
+
+    return {
+      id: node.id,
+      position: { x, y },
+      type: 'custom',
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+      data: formatNodeData(node),
+      style: styleForType(node.type, node.scopeType, false),
+    } satisfies Node;
+  });
+}
+
+export function GraphPreview({
+  nodes,
+  edges,
+  onNodeSelect,
+  selectedNodeId,
+  fitViewSignal,
+}: GraphPreviewProps): JSX.Element {
+  const [instance, setInstance] = useState<ReactFlowInstance | null>(null);
+
+  const nodeTypes = useMemo(() => ({ custom: CustomGraphNode }), []);
+
+  const flowNodes: Node[] = useMemo(
+    () =>
+      nodes && nodes.length > 0
+        ? layoutNodes(nodes).map((node) => ({
+            ...node,
+            style: styleForType(
+              (node.data as GraphNodeData).originalNode.type,
+              (node.data as GraphNodeData).originalNode.scopeType,
+              node.id === selectedNodeId,
+            ),
+          }))
+        : fallbackNodes,
+    [nodes, selectedNodeId],
+  );
+
+  const flowEdges: Edge[] = useMemo(
+    () =>
+      edges && edges.length > 0
+        ? edges.map((edge) => ({
+            ...edge,
+            type: 'smoothstep',
+            label: edgeLabelForType(edge.type),
+            labelStyle: {
+              fill: '#cbd5e1',
+              fontSize: 11,
+              fontWeight: 600,
+            },
+            labelBgPadding: [6, 3] as [number, number],
+            labelBgBorderRadius: 999,
+            labelBgStyle: {
+              fill: '#020617',
+              opacity: 0.92,
+            },
+            style: {
+              stroke: edge.scopeType === 'cluster' ? '#f59e0b' : '#cbd5e1',
+              strokeOpacity: 1,
+              strokeWidth: edge.scopeType === 'cluster' ? 2.4 : 2,
+            },
+            interactionWidth: 24,
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: edge.scopeType === 'cluster' ? '#f59e0b' : '#cbd5e1',
+            } as EdgeMarker,
+          }))
+        : fallbackEdges,
+    [edges],
+  );
+
+  useEffect(() => {
+    if (!instance) {
+      return;
+    }
+
+    void instance.fitView({ duration: 300, padding: 0.2 });
+  }, [fitViewSignal, instance, flowNodes.length, flowEdges.length]);
 
   const handleNodeClick: NodeMouseHandler = (_, node) => {
     const originalNode = (node.data as { originalNode?: GraphDisplayNode }).originalNode;
@@ -139,9 +322,29 @@ export function GraphPreview({ nodes, edges, onNodeSelect }: GraphPreviewProps):
 
   return (
     <div className="h-[560px] overflow-hidden rounded-[28px] border border-white/10 bg-slate-950 lg:h-[680px] xl:h-[760px]">
-      <ReactFlow fitView nodes={flowNodes} edges={flowEdges} onNodeClick={handleNodeClick}>
+      <ReactFlow
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        nodes={flowNodes}
+        edges={flowEdges}
+        nodeTypes={nodeTypes}
+        onInit={setInstance}
+        onNodeClick={handleNodeClick}
+      >
         <Background color="#334155" gap={20} />
-        <Controls />
+        <MiniMap
+          pannable
+          zoomable
+          style={{ background: '#020617', border: '1px solid rgba(148, 163, 184, 0.3)' }}
+          nodeColor={(node) => {
+            if (node.id === selectedNodeId) {
+              return '#22d3ee';
+            }
+
+            return '#475569';
+          }}
+        />
+        <Controls showInteractive={false} />
       </ReactFlow>
     </div>
   );

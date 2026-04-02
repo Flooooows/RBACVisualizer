@@ -2,7 +2,6 @@
 
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
-  ApiError,
   apiFetch,
   type ClusterStatusResponse,
   type ImportDetailResponse,
@@ -90,6 +89,37 @@ type CreateImportResponse = {
   issues: Array<{ code: string; message: string; severity: string }>;
 };
 
+function statusTone(status: string): string {
+  if (status.includes('FAILED')) {
+    return 'bg-rose-950/30 text-rose-200 border-rose-800/40';
+  }
+
+  if (status.includes('WARNING')) {
+    return 'bg-amber-950/30 text-amber-200 border-amber-800/40';
+  }
+
+  return 'bg-emerald-950/30 text-emerald-200 border-emerald-800/40';
+}
+
+function statusIcon(status: string): string {
+  if (status.includes('FAILED')) {
+    return '⚠';
+  }
+
+  if (status.includes('WARNING')) {
+    return '◔';
+  }
+
+  return '✓';
+}
+
+function formatLabel(value: string): string {
+  return value
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/_/g, ' ')
+    .trim();
+}
+
 export function ImportsClient(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -110,6 +140,15 @@ export function ImportsClient(): JSX.Element {
   const selectedImport = useMemo(
     () => imports.find((item) => item.id === selectedImportId) ?? imports[0] ?? null,
     [imports, selectedImportId],
+  );
+
+  const importStats = useMemo(
+    () => ({
+      total: imports.length,
+      warnings: imports.filter((item) => item.status.includes('WARNING')).length,
+      findings: imports.reduce((sum, item) => sum + item.findings, 0),
+    }),
+    [imports],
   );
 
   async function loadImports(preferredImportId?: string): Promise<void> {
@@ -242,14 +281,191 @@ export function ImportsClient(): JSX.Element {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-      <div className="app-panel space-y-5 p-5">
-        <div>
-          <p className="text-sm text-slate-300">
-            Submit a YAML or JSON snapshot directly to the backend import pipeline.
-          </p>
+    <div className="grid grid-cols-12 gap-6">
+      <div className="col-span-12 space-y-6 lg:col-span-8">
+        <div className="app-panel-muted relative overflow-hidden p-10 text-center">
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-500/10 to-transparent opacity-80" />
+          <div className="relative mx-auto flex max-w-2xl flex-col items-center">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#2d3449] text-4xl text-brand-100 ring-1 ring-white/10">
+              ⤴
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-50">
+              Upload Kubernetes RBAC manifests
+            </h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
+              Drag in YAML or JSON RBAC snapshots, load one of the prepared samples, or paste raw
+              manifests directly into the editor below.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setPayload(sampleManifest);
+                  setSourceLabel('frontend-clean-sample');
+                  setSelectedFileName(null);
+                }}
+                className="app-button-secondary"
+              >
+                Load clean sample
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPayload(anomalyManifest);
+                  setSourceLabel('frontend-anomaly-sample');
+                  setSelectedFileName(null);
+                }}
+                className="app-button-secondary border border-amber-700/40 bg-amber-500/10 text-amber-100 hover:bg-amber-500/15"
+              >
+                Load anomaly sample
+              </button>
+              <label className="app-button-secondary cursor-pointer border border-emerald-700/40 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15">
+                Load file
+                <input
+                  type="file"
+                  accept=".yaml,.yml,.json,text/yaml,application/yaml,application/json"
+                  className="hidden"
+                  onChange={(event) => void onFileSelected(event)}
+                />
+              </label>
+            </div>
+            <div className="mt-6 flex flex-wrap justify-center gap-3 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+              <span className="rounded-lg border border-white/10 bg-[#131b2e] px-4 py-2">YAML</span>
+              <span className="rounded-lg border border-white/10 bg-[#131b2e] px-4 py-2">JSON</span>
+              <span className="rounded-lg border border-white/10 bg-[#131b2e] px-4 py-2">
+                RoleBindings
+              </span>
+              <span className="rounded-lg border border-white/10 bg-[#131b2e] px-4 py-2">
+                ClusterRoles
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="app-panel-muted p-5">
+
+        <div className="app-panel space-y-5 p-5">
+          <div className="grid gap-3 md:grid-cols-[1fr_1.5fr]">
+            <div>
+              <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-brand-100">
+                Source label
+              </label>
+              <input
+                value={sourceLabel}
+                onChange={(event) => setSourceLabel(event.target.value)}
+                className="app-input"
+              />
+            </div>
+            <div className="app-panel-muted px-4 py-3 text-sm text-slate-300">
+              {selectedFileName ? (
+                <span>
+                  Loaded file: <span className="text-white">{selectedFileName}</span>
+                </span>
+              ) : (
+                <span>Tip: use a local YAML/JSON file or one of the prepared samples.</span>
+              )}
+            </div>
+          </div>
+
+          <textarea
+            value={payload}
+            onChange={(event) => setPayload(event.target.value)}
+            className="h-[360px] w-full rounded-xl bg-[#060e20] p-4 font-mono text-xs text-slate-100 outline-none ring-1 ring-white/5 focus:ring-2 focus:ring-brand-500/50"
+          />
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-slate-400">
+              The payload is validated, normalized, and then projected into graph, anomalies,
+              subject, and resource views.
+            </p>
+            <button
+              type="button"
+              onClick={() => void submitImport()}
+              disabled={
+                submitting || payload.trim().length === 0 || sourceLabel.trim().length === 0
+              }
+              className="app-button-primary"
+            >
+              {submitting ? 'Importing…' : 'Create import snapshot'}
+            </button>
+          </div>
+
+          <AsyncState loading={false} error={error} />
+          {lastSubmission ? (
+            <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/30 p-4 text-sm text-emerald-100">
+              <p className="font-medium">Snapshot created: {lastSubmission.importId}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-emerald-300">
+                {lastSubmission.status}
+              </p>
+              {lastSubmission.issues.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {lastSubmission.issues.map((issue, index) => (
+                    <div key={`${issue.code}-${index}`} className="app-panel-muted p-3">
+                      <p className="font-medium">{issue.code}</p>
+                      <p className="mt-1 text-xs text-emerald-200">{issue.message}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="app-panel overflow-hidden">
+          <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+            <h3 className="text-lg font-bold text-slate-50">Recent activity</h3>
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-100">
+              Latest snapshots
+            </span>
+          </div>
+          <div className="divide-y divide-white/5">
+            {imports.length === 0 ? (
+              <div className="px-6 py-6 text-sm text-slate-400">
+                No snapshot yet. Submit the sample YAML to create your first import.
+              </div>
+            ) : (
+              imports.slice(0, 5).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedImportId(item.id)}
+                  className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition hover:bg-[#171f33]"
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={[
+                        'flex h-10 w-10 items-center justify-center rounded-lg border text-sm',
+                        statusTone(item.status),
+                      ].join(' ')}
+                    >
+                      {statusIcon(item.status)}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-50">
+                        {item.sourceLabel ?? item.id}
+                      </h4>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {item.documents} documents • {item.findings} findings
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span
+                      className={[
+                        'rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]',
+                        statusTone(item.status),
+                      ].join(' ')}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="col-span-12 space-y-6 lg:col-span-4">
+        <div className="app-panel p-6">
           <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-100">
             Direct cluster import
           </h3>
@@ -334,133 +550,40 @@ export function ImportsClient(): JSX.Element {
             </div>
           ) : null}
         </div>
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setPayload(sampleManifest);
-              setSourceLabel('frontend-clean-sample');
-              setSelectedFileName(null);
-            }}
-            className="app-button-secondary"
-          >
-            Load clean sample
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setPayload(anomalyManifest);
-              setSourceLabel('frontend-anomaly-sample');
-              setSelectedFileName(null);
-            }}
-            className="app-button-secondary border border-amber-700/40 bg-amber-500/10 text-amber-100 hover:bg-amber-500/15"
-          >
-            Load anomaly sample
-          </button>
-          <label className="app-button-secondary cursor-pointer border border-emerald-700/40 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15">
-            Load file
-            <input
-              type="file"
-              accept=".yaml,.yml,.json,text/yaml,application/yaml,application/json"
-              className="hidden"
-              onChange={(event) => void onFileSelected(event)}
-            />
-          </label>
-        </div>
-        <div className="grid gap-3 md:grid-cols-[1fr_1.5fr]">
-          <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-brand-100">
-              Source label
-            </label>
-            <input
-              value={sourceLabel}
-              onChange={(event) => setSourceLabel(event.target.value)}
-              className="app-input"
-            />
-          </div>
-          <div className="app-panel-muted px-4 py-3 text-sm text-slate-300">
-            {selectedFileName ? (
-              <span>
-                Loaded file: <span className="text-white">{selectedFileName}</span>
-              </span>
-            ) : (
-              <span>Tip: use a local YAML/JSON file or one of the prepared samples.</span>
-            )}
-          </div>
-        </div>
-        <textarea
-          value={payload}
-          onChange={(event) => setPayload(event.target.value)}
-          className="h-80 w-full rounded-[24px] bg-slate-950/80 p-4 font-mono text-xs text-slate-100 outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-brand-500/60"
-        />
-        <button
-          type="button"
-          onClick={() => void submitImport()}
-          disabled={submitting || payload.trim().length === 0 || sourceLabel.trim().length === 0}
-          className="app-button-primary"
-        >
-          {submitting ? 'Importing…' : 'Create import snapshot'}
-        </button>
-        <AsyncState loading={false} error={error} />
-        {lastSubmission ? (
-          <div className="rounded-[24px] border border-emerald-800/40 bg-emerald-950/30 p-4 text-sm text-emerald-100">
-            <p className="font-medium">Snapshot created: {lastSubmission.importId}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-emerald-300">
-              {lastSubmission.status}
-            </p>
-            {lastSubmission.issues.length > 0 ? (
-              <div className="mt-3 space-y-2">
-                {lastSubmission.issues.map((issue, index) => (
-                  <div key={`${issue.code}-${index}`} className="app-panel-muted p-3">
-                    <p className="font-medium">{issue.code}</p>
-                    <p className="mt-1 text-xs text-emerald-200">{issue.message}</p>
-                  </div>
-                ))}
+        <div className="app-panel p-6">
+          <h3 className="text-sm font-bold uppercase tracking-[0.22em] text-brand-100">
+            Ingestion meta
+          </h3>
+          <div className="mt-6 space-y-6">
+            <div>
+              <p className="text-4xl font-extrabold tracking-tight text-slate-50">
+                {importStats.total}
+              </p>
+              <p className="mt-2 text-xs text-slate-400">Snapshots currently available</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-lg font-bold text-slate-50">{importStats.findings}</p>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
+                  Findings recorded
+                </p>
               </div>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      <div className="space-y-4">
-        <div className="app-panel p-5">
-          <h3 className="text-lg font-semibold text-white">Snapshots</h3>
-          <div className="mt-4">
-            <AsyncState
-              loading={loading}
-              error={null}
-              empty={!loading && imports.length === 0}
-              emptyMessage="No snapshot yet. Submit the sample YAML to create your first import."
-            />
-            <div className="space-y-3">
-              {imports.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSelectedImportId(item.id)}
-                  className={[
-                    'w-full rounded-[22px] p-4 text-left text-sm transition ring-1',
-                    selectedImport?.id === item.id
-                      ? 'bg-brand-500/10 text-white ring-brand-100/30'
-                      : 'bg-slate-950/50 text-slate-300 ring-white/5 hover:bg-slate-900/60 hover:ring-white/10',
-                  ].join(' ')}
-                >
-                  <p className="font-medium">{item.sourceLabel ?? item.id}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-brand-100">
-                    {item.status}
-                  </p>
-                  <p className="mt-2 text-xs text-slate-400">
-                    Documents: {item.documents} • Findings: {item.findings}
-                  </p>
-                </button>
-              ))}
+              <div>
+                <p className="text-lg font-bold text-emerald-300">{importStats.warnings}</p>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
+                  Warning snapshots
+                </p>
+              </div>
+            </div>
+            <div className="border-t border-white/5 pt-4 text-xs text-slate-400">
+              Use cluster status before import to confirm connectivity and object volume.
             </div>
           </div>
         </div>
 
         {detail ? (
-          <div className="app-panel p-5">
-            <h3 className="text-lg font-semibold text-white">Snapshot detail</h3>
+          <div className="app-panel p-6">
+            <h3 className="text-lg font-bold text-slate-50">Snapshot detail</h3>
             <div className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-2">
               <p>
                 Source: <span className="text-white">{detail.sourceLabel ?? 'n/a'}</span>
@@ -482,7 +605,7 @@ export function ImportsClient(): JSX.Element {
               </p>
             </div>
             {detail.warnings.length > 0 ? (
-              <div className="mt-4 rounded-[24px] border border-amber-800/40 bg-amber-950/25 p-4">
+              <div className="mt-4 rounded-xl border border-amber-800/40 bg-amber-950/25 p-4">
                 <h4 className="text-sm font-semibold text-amber-200">Warnings</h4>
                 <div className="mt-3 space-y-2 text-sm text-amber-100">
                   {detail.warnings.map((warning) => (

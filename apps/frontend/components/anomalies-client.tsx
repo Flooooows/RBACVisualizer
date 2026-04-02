@@ -29,6 +29,19 @@ function formatLabel(value: string): string {
     .join(' ');
 }
 
+function severityWeight(severity: string): number {
+  if (severity === 'CRITICAL') {
+    return 4;
+  }
+  if (severity === 'HIGH') {
+    return 3;
+  }
+  if (severity === 'MEDIUM') {
+    return 2;
+  }
+  return 1;
+}
+
 export function AnomaliesClient(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +87,19 @@ export function AnomaliesClient(): JSX.Element {
     [summary.bySeverity],
   );
   const typeOptions = useMemo(() => Object.keys(summary.byType).sort(), [summary.byType]);
+
+  const topTypes = useMemo(
+    () =>
+      Object.entries(summary.byType)
+        .sort(([, left], [, right]) => right - left)
+        .slice(0, 3),
+    [summary.byType],
+  );
+
+  const weightedRiskScore = useMemo(
+    () => items.reduce((sum, item) => sum + severityWeight(item.severity), 0),
+    [items],
+  );
 
   useEffect(() => {
     let active = true;
@@ -127,19 +153,80 @@ export function AnomaliesClient(): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="app-panel p-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-brand-100">Findings</p>
-          <p className="mt-3 text-3xl font-semibold text-white">{summary.total}</p>
-        </div>
-        {Object.entries(summary.bySeverity).map(([severity, count]) => (
-          <div key={severity} className="app-panel p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-brand-100">
-              {formatLabel(severity)}
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-white">{count}</p>
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="app-panel p-6 lg:col-span-8">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white">Risk distribution</h3>
+            <span className="rounded-full bg-[#2d3449] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
+              Current snapshot
+            </span>
           </div>
-        ))}
+          <div className="mt-8 flex h-64 items-end justify-between gap-2 px-4">
+            {Object.entries(summary.bySeverity).map(([severity, count]) => {
+              const height = `${Math.max(18, (count / Math.max(summary.total, 1)) * 100)}%`;
+
+              return (
+                <div key={severity} className="flex flex-1 flex-col items-center gap-3">
+                  <div
+                    className={[
+                      'w-full rounded-t-xl transition-all duration-300',
+                      severity === 'CRITICAL'
+                        ? 'bg-rose-500/30 hover:bg-rose-500/45'
+                        : severity === 'HIGH'
+                          ? 'bg-amber-500/30 hover:bg-amber-500/45'
+                          : severity === 'MEDIUM'
+                            ? 'bg-sky-500/30 hover:bg-sky-500/45'
+                            : 'bg-slate-500/25 hover:bg-slate-500/35',
+                    ].join(' ')}
+                    style={{ height }}
+                  />
+                  <div className="text-center">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
+                      {severity}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">{count}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-6 lg:col-span-4">
+          <div className="app-panel p-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+                Findings
+              </p>
+              <p className="mt-3 text-4xl font-extrabold tracking-tight text-slate-50">
+                {summary.total}
+              </p>
+            </div>
+            <div className="mt-6 text-xs text-slate-400">Weighted risk score</div>
+            <p className="mt-2 text-3xl font-extrabold tracking-tight text-amber-200">
+              {weightedRiskScore}
+            </p>
+          </div>
+
+          <div className="app-panel p-6">
+            <h3 className="text-sm font-bold uppercase tracking-[0.22em] text-brand-100">
+              Top finding types
+            </h3>
+            <div className="mt-4 space-y-3">
+              {topTypes.map(([type, count]) => (
+                <div
+                  key={type}
+                  className="flex items-center justify-between rounded-lg bg-[#131b2e] px-4 py-3"
+                >
+                  <p className="text-sm font-medium text-slate-100">{formatLabel(type)}</p>
+                  <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                    {count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="app-panel p-4">
@@ -204,64 +291,82 @@ export function AnomaliesClient(): JSX.Element {
         </label>
       </div>
 
-      {filteredItems.map((item) => (
-        <div key={item.id} className="app-panel p-4">
-          {(() => {
-            const details = (item.details ?? {}) as {
-              subjectIds?: string[];
-            };
-            const firstSubjectId = details.subjectIds?.[0];
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-50">Active risk registry</h2>
+        {filteredItems.map((item) => (
+          <div key={item.id} className="app-panel p-6 transition hover:bg-[#1b2338]">
+            {(() => {
+              const details = (item.details ?? {}) as {
+                subjectIds?: string[];
+              };
+              const firstSubjectId = details.subjectIds?.[0];
 
-            return (
-              <>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <span
+              return (
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex items-start gap-4">
+                    <div
                       className={[
-                        'inline-flex rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-[0.2em]',
-                        severityClasses(item.severity),
+                        'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-lg font-bold',
+                        item.severity === 'CRITICAL'
+                          ? 'bg-rose-500/10 text-rose-200'
+                          : item.severity === 'HIGH'
+                            ? 'bg-amber-500/10 text-amber-200'
+                            : item.severity === 'MEDIUM'
+                              ? 'bg-sky-500/10 text-sky-200'
+                              : 'bg-slate-500/10 text-slate-200',
                       ].join(' ')}
                     >
-                      {item.severity}
-                    </span>
-                    <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
-                    <p className="mt-2 text-sm text-slate-400">{formatLabel(item.type)}</p>
+                      !
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="text-lg font-bold text-slate-50">{item.title}</h3>
+                        <span
+                          className={[
+                            'inline-flex rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em]',
+                            severityClasses(item.severity),
+                          ].join(' ')}
+                        >
+                          {item.severity}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-slate-400">{formatLabel(item.type)}</p>
+                      <p className="mt-3 text-xs text-slate-500">
+                        {new Date(item.createdAt).toLocaleString()}
+                      </p>
+                      {importId && firstSubjectId ? (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <Link
+                            href={`/subjects?importId=${encodeURIComponent(importId)}&subjectId=${encodeURIComponent(firstSubjectId)}`}
+                            className="rounded-lg bg-[#2d3449] px-4 py-2 text-xs font-semibold text-slate-100 transition hover:bg-[#31394d]"
+                          >
+                            Open subject access
+                          </Link>
+                          <Link
+                            href={`/graph?importId=${encodeURIComponent(importId)}&subjectId=${encodeURIComponent(firstSubjectId)}`}
+                            className="rounded-lg bg-[#adc6ff] px-4 py-2 text-xs font-bold text-[#002e6a] transition hover:brightness-110"
+                          >
+                            Open subject graph
+                          </Link>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    {new Date(item.createdAt).toLocaleString()}
-                  </p>
+
+                  <details className="w-full lg:max-w-[360px] app-panel-muted p-3">
+                    <summary className="cursor-pointer text-sm font-medium text-slate-200">
+                      View raw finding details
+                    </summary>
+                    <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-xs text-slate-300">
+                      {JSON.stringify(item.details, null, 2)}
+                    </pre>
+                  </details>
                 </div>
-
-                {importId && firstSubjectId ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Link
-                      href={`/subjects?importId=${encodeURIComponent(importId)}&subjectId=${encodeURIComponent(firstSubjectId)}`}
-                      className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200 transition hover:border-slate-500"
-                    >
-                      Open subject access
-                    </Link>
-                    <Link
-                      href={`/graph?importId=${encodeURIComponent(importId)}&subjectId=${encodeURIComponent(firstSubjectId)}`}
-                      className="rounded-full border border-brand-700 px-3 py-1 text-xs text-brand-100 transition hover:border-brand-500"
-                    >
-                      Open subject graph
-                    </Link>
-                  </div>
-                ) : null}
-
-                <details className="mt-4 app-panel-muted p-3">
-                  <summary className="cursor-pointer text-sm font-medium text-slate-200">
-                    View raw finding details
-                  </summary>
-                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-xs text-slate-300">
-                    {JSON.stringify(item.details, null, 2)}
-                  </pre>
-                </details>
-              </>
-            );
-          })()}
-        </div>
-      ))}
+              );
+            })()}
+          </div>
+        ))}
+      </div>
 
       {filteredItems.length === 0 ? (
         <AsyncState

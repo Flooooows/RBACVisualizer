@@ -139,6 +139,16 @@ export function SubjectsClient(): JSX.Element {
     [subjects],
   );
 
+  const stats = useMemo(
+    () => ({
+      total: subjects.length,
+      serviceAccounts: subjects.filter((subject) => subject.kind === 'SERVICE_ACCOUNT').length,
+      privilegedPaths: access?.permissions.length ?? 0,
+      humanIdentities: subjects.filter((subject) => subject.kind !== 'SERVICE_ACCOUNT').length,
+    }),
+    [access?.permissions.length, subjects],
+  );
+
   return (
     <div className="space-y-4">
       <div className="app-panel grid gap-4 p-4 lg:grid-cols-[0.9fr_0.9fr_1.2fr_1.4fr]">
@@ -212,6 +222,39 @@ export function SubjectsClient(): JSX.Element {
         ) : null}
       </div>
 
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="app-panel p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+            Total Subjects
+          </p>
+          <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-50">{stats.total}</p>
+        </div>
+        <div className="app-panel p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+            Service Accounts
+          </p>
+          <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-50">
+            {stats.serviceAccounts}
+          </p>
+        </div>
+        <div className="app-panel p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+            Human identities
+          </p>
+          <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-50">
+            {stats.humanIdentities}
+          </p>
+        </div>
+        <div className="app-panel p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+            Active paths
+          </p>
+          <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-50">
+            {stats.privilegedPaths}
+          </p>
+        </div>
+      </div>
+
       {loading || error || !access ? (
         <AsyncState
           loading={loading}
@@ -220,42 +263,103 @@ export function SubjectsClient(): JSX.Element {
           emptyMessage="Import a snapshot with subjects to inspect effective access."
         />
       ) : (
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="app-panel space-y-3 p-4">
-            <h3 className="text-lg font-semibold text-white">Effective permissions</h3>
-            {access.permissions.length === 0 ? (
-              <p className="text-sm text-slate-400">
-                No resolved permissions for this subject in the selected snapshot.
-              </p>
-            ) : (
-              access.permissions.map((permission, index) => (
-                <div
-                  key={`${permission.bindingId}-${permission.ruleIndex}-${index}`}
-                  className="app-panel-muted p-4 text-sm text-slate-300"
-                >
-                  <p className="font-medium text-white">
-                    {permission.bindingKind} {permission.bindingName} → {permission.roleKind}{' '}
-                    {permission.roleName}
-                  </p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.2em] text-brand-100">
-                    {permission.scopeType}{' '}
-                    {permission.bindingNamespace ? `• ${permission.bindingNamespace}` : ''}
-                  </p>
-                  <p className="mt-3">
-                    Resources:{' '}
-                    <span className="text-white">
-                      {permission.resources.join(', ') || 'non-resource'}
+        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.35fr_0.9fr]">
+          <div className="app-panel overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+              <h3 className="text-lg font-bold text-slate-50">Subject inventory</h3>
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-100">
+                {subjects.length} shown
+              </span>
+            </div>
+            <div className="divide-y divide-white/5">
+              {subjects.map((subject) => {
+                const active = subject.id === subjectId;
+
+                return (
+                  <button
+                    key={subject.id}
+                    type="button"
+                    onClick={() => setSubjectId(subject.id)}
+                    className={[
+                      'flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition',
+                      active ? 'bg-[#171f33]' : 'hover:bg-[#171f33]',
+                    ].join(' ')}
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-slate-50">{subject.name}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {subject.kind}
+                        {subject.namespace ? ` • ${subject.namespace}` : ' • cluster identity'}
+                      </p>
+                    </div>
+                    <span
+                      className={[
+                        'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]',
+                        active
+                          ? 'bg-brand-500/10 text-brand-100 ring-1 ring-brand-100/20'
+                          : 'bg-[#2d3449] text-slate-300',
+                      ].join(' ')}
+                    >
+                      {subject.kind === 'SERVICE_ACCOUNT' ? 'workload' : 'identity'}
                     </span>
-                  </p>
-                  <p className="mt-1">
-                    Verbs: <span className="text-white">{permission.verbs.join(', ') || '*'}</span>
-                  </p>
-                </div>
-              ))
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="app-panel overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+              <h3 className="text-lg font-bold text-slate-50">Effective permissions</h3>
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                {access.permissions.length} paths
+              </span>
+            </div>
+            {access.permissions.length === 0 ? (
+              <div className="px-5 py-5 text-sm text-slate-400">
+                No resolved permissions for this subject in the selected snapshot.
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {access.permissions.map((permission, index) => (
+                  <div
+                    key={`${permission.bindingId}-${permission.ruleIndex}-${index}`}
+                    className="px-5 py-4 text-sm text-slate-300 transition hover:bg-[#171f33]"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-white">
+                          {permission.bindingName} → {permission.roleName}
+                        </p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-brand-100">
+                          {permission.bindingKind} · {permission.roleKind} · {permission.scopeType}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-[#2d3449] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
+                        {permission.bindingNamespace ?? 'cluster'}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid gap-2 text-xs text-slate-400 md:grid-cols-2">
+                      <p>
+                        Resources:{' '}
+                        <span className="font-medium text-slate-100">
+                          {permission.resources.join(', ') || 'non-resource'}
+                        </span>
+                      </p>
+                      <p>
+                        Verbs:{' '}
+                        <span className="font-medium text-slate-100">
+                          {permission.verbs.join(', ') || '*'}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
-          <div className="app-panel p-4">
+          <div className="app-panel p-5">
             <h3 className="text-lg font-semibold text-white">
               Why does this subject have pod read access?
             </h3>

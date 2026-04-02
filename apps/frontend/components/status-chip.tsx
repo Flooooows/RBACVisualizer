@@ -15,7 +15,7 @@ export function StatusChip({ tone = 'default', children }: StatusChipProps): JSX
   return (
     <span
       className={[
-        'inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-[0.25em]',
+        'inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em]',
         toneClasses[tone],
       ].join(' ')}
     >
