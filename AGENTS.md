@@ -20,6 +20,7 @@ Agents are execution units with strict scope and must produce concrete outputs.
 The product helps platform engineers, DevOps, and security teams understand Kubernetes RBAC.
 
 It visualizes and analyzes relationships between:
+
 - Users
 - Groups
 - ServiceAccounts
@@ -52,12 +53,14 @@ Core objects:
 - ClusterRoleBinding (cluster-wide)
 
 Subjects:
+
 - User
 - Group
 - ServiceAccount
 
 Rules:
-- verbs (get, list, create, delete, *)
+
+- verbs (get, list, create, delete, \*)
 - resources (pods, secrets, configmaps, etc.)
 - apiGroups
 
@@ -78,8 +81,8 @@ Agents MUST NOT invent RBAC concepts outside Kubernetes spec.
 ## Included
 
 - Import RBAC data from:
-  - Kubernetes API (future)
-  - YAML / JSON (initial MVP)
+  - Kubernetes API / kubeconfig read-only import
+  - YAML / JSON
 
 - Entities:
   - Users
@@ -100,6 +103,7 @@ Agents MUST NOT invent RBAC concepts outside Kubernetes spec.
   - Basic anomaly detection
   - Simple dashboard
   - Local Docker run
+  - Local cluster testing with kind + Podman
 
 ## Excluded (MVP)
 
@@ -116,11 +120,13 @@ Agents MUST NOT invent RBAC concepts outside Kubernetes spec.
 ## 4.1 Access resolution
 
 Given a subject:
+
 - resolve all RoleBindings
 - resolve referenced Roles / ClusterRoles
 - compute effective permissions
 
 Given a resource:
+
 - find all subjects with access
 
 ---
@@ -128,17 +134,20 @@ Given a resource:
 ## 4.2 Graph visualization (core feature)
 
 Graph nodes:
+
 - subject (user/group/serviceaccount)
 - binding
 - role / clusterrole
 - permission (optional aggregated node)
 
 Edges:
+
 - subject → binding
 - binding → role
 - role → permission
 
 Graph must:
+
 - differentiate namespace vs cluster scope
 - allow filtering by namespace
 - support focus on a single subject
@@ -180,21 +189,25 @@ Must support:
 # 5. Technical baseline
 
 ## Frontend
+
 - Next.js
 - TypeScript
 - Tailwind
 - Graph: React Flow
 
 ## Backend
+
 - Node.js + TypeScript
 - NestJS preferred
 - REST API
 
 ## Data
+
 - PostgreSQL
 - Prisma
 
 ## Runtime
+
 - Docker Compose
 
 ---
@@ -225,6 +238,7 @@ Key relationships:
   - namespace
 
 All objects must include:
+
 - name
 - namespace (if applicable)
 - labels (optional MVP+)
@@ -254,9 +268,11 @@ The Orchestrator must:
 ## 8.1 Product Agent
 
 Focus:
+
 - DevOps / Platform / Security personas
 
 Must ensure:
+
 - MVP solves real RBAC pain
 - no generic RBAC drift
 - Kubernetes-first positioning
@@ -402,6 +418,7 @@ Agents MUST return:
 8. Next step
 
 If code is included:
+
 - full files
 - correct imports
 - working structure
@@ -440,6 +457,7 @@ The Orchestrator must validate:
 ## 13.1 Do NOT simplify RBAC incorrectly
 
 Do NOT:
+
 - merge Role and ClusterRole artificially
 - ignore namespace scope
 - ignore ServiceAccounts
@@ -459,6 +477,7 @@ Never shortcut this logic.
 ## 13.3 Always handle namespace correctly
 
 Every query must consider:
+
 - namespace scope
 - cluster scope
 - cross-namespace implications
@@ -468,9 +487,11 @@ Every query must consider:
 ## 13.4 Keep MVP simple but correct
 
 Better:
+
 - correct + simple
 
 Than:
+
 - complex + wrong
 
 ---
@@ -492,6 +513,7 @@ A task is done only if:
 This is a Kubernetes-first product.
 
 The Orchestrator must:
+
 - prioritize Kubernetes correctness over abstraction
 - prioritize usability over completeness
 - prioritize shipping over perfection

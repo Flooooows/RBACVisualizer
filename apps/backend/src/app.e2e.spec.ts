@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './app.module';
+import { GlobalHttpExceptionFilter } from './common/http-exception.filter';
 import { ImportsService } from './imports/imports.service';
 import { AccessResolutionService } from './access-resolution/access-resolution.service';
 import { PrismaService } from './persistence/prisma.service';
@@ -56,6 +57,7 @@ describe('AppModule HTTP', () => {
         exceptionFactory: validationExceptionFactory,
       }),
     );
+    app.useGlobalFilters(new GlobalHttpExceptionFilter());
     app.use(
       text({
         type: ['text/plain', 'text/yaml', 'text/x-yaml', 'application/yaml', 'application/x-yaml'],
@@ -332,6 +334,8 @@ describe('AppModule HTTP', () => {
     const response = await request(app.getHttpServer()).get('/api/anomalies').expect(400);
 
     expect(response.body.message).toBe('Validation failed');
+    expect(response.body.statusCode).toBe(400);
+    expect(response.body.path).toBe('/api/anomalies');
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

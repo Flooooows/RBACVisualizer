@@ -26,7 +26,11 @@
     "stop": "pkill -f \"next dev --hostname 0.0.0.0 --port 3000|next-server|nodemon --watch src --ext ts --exec \\\"ts-node --project tsconfig.json src/main.ts\\\"|ts-node --project tsconfig.json src/main.ts|apps/backend/dist/main.js\" || true",
     "stop:db": "podman stop rbac-visualizer-postgres || true",
     "db:generate": "npx prisma generate --schema apps/backend/prisma/schema.prisma",
+    "db:status": "npx prisma migrate status --schema apps/backend/prisma/schema.prisma",
     "db:push": "npx prisma db push --schema apps/backend/prisma/schema.prisma",
+    "db:migrate:dev": "npx prisma migrate dev --schema apps/backend/prisma/schema.prisma",
+    "db:migrate:deploy": "npx prisma migrate deploy --schema apps/backend/prisma/schema.prisma",
+    "db:reset": "npx prisma migrate reset --schema apps/backend/prisma/schema.prisma --force",
     "format": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\""
   },
   "devDependencies": {

@@ -4,6 +4,7 @@ import { text } from 'express';
 import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { GlobalHttpExceptionFilter } from './common/http-exception.filter';
 import { validationExceptionFactory } from './common/validation.exception-factory';
 
 async function bootstrap(): Promise<void> {
@@ -24,6 +25,7 @@ async function bootstrap(): Promise<void> {
       exceptionFactory: validationExceptionFactory,
     }),
   );
+  app.useGlobalFilters(new GlobalHttpExceptionFilter());
 
   const importBodyLimit = process.env.IMPORT_BODY_LIMIT ?? '2mb';
   app.use(

@@ -11,6 +11,7 @@ Kubernetes-first RBAC Visualizer scaffold for the MVP defined in `AGENTS.md`.
 - PostgreSQL wiring via Prisma schema and validated local DB sync
 - Minimal `docker-compose.yml` for local development
 - Basic backend hardening with security headers and configurable import body limit
+- Minimal GitHub Actions CI for build / lint / test
 
 ## Tested user flow
 
@@ -46,6 +47,10 @@ This repository has already been validated with the following MVP flow:
 5. Apply the Prisma schema:
 
    npm run db:push
+
+   For an actual migration workflow instead of a schema push, use:
+
+   npm run db:migrate:dev
 
 6. Start both apps in development mode:
 
@@ -104,6 +109,62 @@ npm run start:db
 
 - `CORS_ORIGIN` controls the allowed frontend origin
 - `IMPORT_BODY_LIMIT` controls the maximum raw YAML/JSON payload accepted by the import endpoint
+
+## Prisma / database workflow
+
+This project now supports both a quick local schema sync flow and a more production-like Prisma migration flow.
+
+### Quick local flow
+
+Use this when you just want to get the app running locally fast:
+
+```bash
+npm run start:db
+npm run db:push
+npm run dev
+```
+
+### Migration-driven flow
+
+Use this when you want a cleaner pre-production workflow:
+
+```bash
+npm run start:db
+npm run db:migrate:dev
+npm run dev
+```
+
+If you already initialized your local database previously with `npm run db:push`, Prisma may consider that schema as unmanaged for migrations. In that case, reset the local database once and continue with migrations:
+
+```bash
+npm run db:reset
+npm run db:migrate:deploy
+```
+
+This is intended for local/pre-production environments only.
+
+Useful database commands:
+
+```bash
+npm run db:generate
+npm run db:status
+npm run db:migrate:dev
+npm run db:migrate:deploy
+npm run db:reset
+```
+
+Suggested local staging-like workflow:
+
+```bash
+npm run start:db
+npm run db:migrate:deploy
+npm run build
+npm run lint
+npm run test
+npm run start
+```
+
+If you are just testing iteratively during development, `npm run db:push` remains acceptable.
 
 ## Quick manual test
 
@@ -251,6 +312,7 @@ npm run build
 npm run lint
 npm run test
 npm run test:backend
+npm run db:status
 
 ## Docker Compose
 
