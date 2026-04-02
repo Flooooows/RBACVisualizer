@@ -6,7 +6,8 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
+import type { RequestWithRequestId } from './request-id.middleware';
 
 type ErrorPayload = {
   message: string;
@@ -22,11 +23,17 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const response = context.getResponse<Response>();
-    const request = context.getRequest<Request>();
+    const request = context.getRequest<RequestWithRequestId>();
+    const requestId = request.requestId ?? request.headers['x-request-id'] ?? null;
 
     const status =
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-    const payload = this.buildPayload(exception, status, request.url);
+    const payload = this.buildPayload(
+      exception,
+      status,
+      request.url,
+      typeof requestId === 'string' ? requestId : null,
+    );
 
     const logEntry = {
       method: request.method,
@@ -34,7 +41,9 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       status,
       message: payload.message,
       detail: payload.detail,
-      requestId: request.headers['x-request-id'] ?? null,
+      requestId,
+      userAgent: request.headers['user-agent'] ?? null,
+      ip: request.ip,
     };
 
     if (status >= 500) {
@@ -53,7 +62,13 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     exception: unknown,
     status: number,
     path: string,
-  ): ErrorPayload & { statusCode: number; timestamp: string; path: string } {
+    requestId: string | null,
+  ): ErrorPayload & {
+    statusCode: number;
+    timestamp: string;
+    path: string;
+    requestId: string | null;
+  } {
     if (exception instanceof HttpException) {
       const response = exception.getResponse();
 
@@ -62,6 +77,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
           statusCode: status,
           timestamp: new Date().toISOString(),
           path,
+          requestId,
           message: response,
         };
       }
@@ -72,6 +88,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
           statusCode: status,
           timestamp: new Date().toISOString(),
           path,
+          requestId,
           message: typeof value.message === 'string' ? value.message : exception.message,
           detail: typeof value.detail === 'string' ? value.detail : undefined,
           errors: value.errors,
@@ -84,6 +101,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       timestamp: new Date().toISOString(),
       path,
+      requestId,
       message: 'Internal server error',
       detail: exception instanceof Error ? exception.message : undefined,
     };

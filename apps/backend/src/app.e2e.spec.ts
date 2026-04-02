@@ -4,6 +4,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './app.module';
 import { GlobalHttpExceptionFilter } from './common/http-exception.filter';
+import { requestIdMiddleware } from './common/request-id.middleware';
 import { ImportsService } from './imports/imports.service';
 import { AccessResolutionService } from './access-resolution/access-resolution.service';
 import { PrismaService } from './persistence/prisma.service';
@@ -49,6 +50,7 @@ describe('AppModule HTTP', () => {
 
     app = moduleRef.createNestApplication();
     app.setGlobalPrefix('api');
+    app.use(requestIdMiddleware);
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
@@ -75,12 +77,16 @@ describe('AppModule HTTP', () => {
   });
 
   it('returns health status', async () => {
-    const response = await request(app.getHttpServer()).get('/api/health').expect(200);
+    const response = await request(app.getHttpServer())
+      .get('/api/health')
+      .set('x-request-id', 'health-check-id')
+      .expect(200);
 
     expect(response.body).toEqual({
       status: 'ok',
       service: 'rbac-visualizer-backend',
     });
+    expect(response.headers['x-request-id']).toBe('health-check-id');
   });
 
   it('creates an import snapshot over HTTP', async () => {
@@ -331,11 +337,16 @@ describe('AppModule HTTP', () => {
   });
 
   it('returns structured validation errors for missing required query params', async () => {
-    const response = await request(app.getHttpServer()).get('/api/anomalies').expect(400);
+    const response = await request(app.getHttpServer())
+      .get('/api/anomalies')
+      .set('x-request-id', 'validation-request-id')
+      .expect(400);
 
     expect(response.body.message).toBe('Validation failed');
     expect(response.body.statusCode).toBe(400);
     expect(response.body.path).toBe('/api/anomalies');
+    expect(response.body.requestId).toBe('validation-request-id');
+    expect(response.headers['x-request-id']).toBe('validation-request-id');
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

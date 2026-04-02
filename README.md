@@ -13,6 +13,11 @@ Kubernetes-first RBAC Visualizer scaffold for the MVP defined in `AGENTS.md`.
 - Basic backend hardening with security headers and configurable import body limit
 - Minimal GitHub Actions CI for build / lint / test
 
+## Documentation
+
+- Usage guide: `docs/USAGE.md`
+- Local staging runbook: `docs/STAGING_LOCAL.md`
+
 ## Tested user flow
 
 This repository has already been validated with the following MVP flow:
