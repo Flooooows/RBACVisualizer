@@ -1,0 +1,146 @@
+<mxfile host="app.diagrams.net" modified="2026-04-03T10:20:00.000Z" agent="OpenAI" version="24.7.17">
+  <diagram id="current-architecture" name="Current Architecture">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title-1" value="RBAC Visualizer — Current Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="900" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="customer-zone-1" value="Operator Workstation" style="rounded=1;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;fillColor=#F8FAFC;strokeColor=#94A3B8;strokeWidth=2;fontSize=18;fontStyle=1;verticalAlign=top;spacingTop=14;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="760" height="760" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="app-zone-1" value="RBAC Visualizer App" style="rounded=1;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;fillColor=#EFF6FF;strokeColor=#60A5FA;strokeWidth=2;fontSize=18;fontStyle=1;verticalAlign=top;spacingTop=14;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="840" y="100" width="1000" height="760" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="user-1" value="Operator / Analyst" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=2;fontSize=16;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="170" width="220" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="browser-1" value="Browser UI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=2;fontSize=16;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="320" width="220" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="local-kubeconfig-1" value="Local kubeconfig / cluster credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#A855F7;strokeWidth=2;fontSize=14;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="470" width="260" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cluster-1" value="Kubernetes / K3s / Kind Cluster&#xa;&#xa;RBAC resources:&#xa;- Namespaces&#xa;- ServiceAccounts&#xa;- Roles / ClusterRoles&#xa;- RoleBindings / ClusterRoleBindings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#16A34A;strokeWidth=2;fontSize=15;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="420" y="200" width="310" height="220" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="frontend-1" value="Hosted Frontend&#xa;Next.js" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2563EB;strokeWidth=2;fontSize=16;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="920" y="170" width="220" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="backend-1" value="Hosted Backend API&#xa;NestJS&#xa;&#xa;- import pipeline&#xa;- graph projection&#xa;- anomalies&#xa;- access resolution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2563EB;strokeWidth=2;fontSize=15;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="150" width="320" height="170" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="db-1" value="Hosted PostgreSQL&#xa;&#xa;- snapshots&#xa;- raw manifests&#xa;- normalized RBAC&#xa;- findings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F766E;strokeWidth=2;fontSize=15;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1580" y="160" width="220" height="150" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="views-1" value="Product views&#xa;- Dashboard&#xa;- Imports&#xa;- Graph&#xa;- Subjects&#xa;- Resources&#xa;- Anomalies" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2563EB;strokeWidth=2;fontSize=14;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="980" y="560" width="270" height="180" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="notes-1" value="Current supported model&#xa;&#xa;1. User opens hosted app&#xa;2. Uploads YAML/JSON or uses direct cluster import&#xa;3. Backend normalizes RBAC into PostgreSQL&#xa;4. UI reads graph, findings, subjects, and resources from API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#94A3B8;strokeWidth=2;fontSize=14;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1290" y="560" width="500" height="180" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e1-1" value="Uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="user-1" target="browser-1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2-1" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2563EB;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="browser-1" target="frontend-1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3-1" value="REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2563EB;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="frontend-1" target="backend-1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4-1" value="SQL / Prisma" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0F766E;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="backend-1" target="db-1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5-1" value="Uploads YAML / JSON" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1D4ED8;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="browser-1" target="backend-1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6-1" value="Direct read-only import" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#A855F7;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="backend-1" target="cluster-1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7-1" value="Credentials / context" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#A855F7;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="local-kubeconfig-1" target="backend-1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8-1" value="Feeds views" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2563EB;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="backend-1" target="views-1"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="target-architecture" name="Target SaaS + Connector">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title-2" value="RBAC Visualizer — Target SaaS + Connector Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1100" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="legend-2" value="Solid arrows = recommended target flow&#xa;Dashed arrows = optional/future platform extensions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;fontSize=12;fontColor=#065F46;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="30" width="520" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="customer-zone-2" value="Customer Environment" style="rounded=1;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;fillColor=#F8FAFC;strokeColor=#94A3B8;strokeWidth=2;fontSize=18;fontStyle=1;verticalAlign=top;spacingTop=14;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="760" height="760" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="saas-zone-2" value="RBAC Visualizer SaaS (hosted by you)" style="rounded=1;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;fillColor=#EFF6FF;strokeColor=#60A5FA;strokeWidth=2;fontSize=18;fontStyle=1;verticalAlign=top;spacingTop=14;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="840" y="100" width="1000" height="760" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="user-2" value="Customer users" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=2;fontSize=16;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="170" width="220" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="browser-2" value="Browser / SaaS UI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=2;fontSize=16;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="320" width="220" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cluster-2" value="Customer Kubernetes cluster" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#16A34A;strokeWidth=2;fontSize=15;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="180" width="280" height="180" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="connector-2" value="Local connector / agent&#xa;&#xa;- runs in customer environment&#xa;- reads cluster RBAC locally&#xa;- pushes snapshots to SaaS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F59E0B;strokeWidth=2;fontSize=15;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="130" y="560" width="320" height="150" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="frontend-2" value="Hosted Frontend&#xa;Next.js" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2563EB;strokeWidth=2;fontSize=16;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="900" y="170" width="220" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="backend-2" value="Hosted Backend / Control Plane&#xa;&#xa;- auth / tenancy&#xa;- import ingestion&#xa;- analysis&#xa;- graph projection&#xa;- API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2563EB;strokeWidth=2;fontSize=15;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="150" width="340" height="190" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="db-2" value="Hosted PostgreSQL (multi-tenant)&#xa;&#xa;- workspaces / accounts&#xa;- snapshots&#xa;- normalized RBAC&#xa;- findings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F766E;strokeWidth=2;fontSize=15;fontStyle=1;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1580" y="160" width="230" height="160" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="secrets-2" value="Secret storage / credentials vault&#xa;(only if direct cluster auth is supported)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7C3AED;strokeWidth=2;fontSize=14;spacing=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1560" y="380" width="260" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="jobs-2" value="Background jobs / sync scheduler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F59E0B;strokeWidth=2;fontSize=14;spacing=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="390" width="250" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="views-2" value="SaaS product views&#xa;- Dashboard&#xa;- Imports&#xa;- Graph&#xa;- Subjects&#xa;- Resources&#xa;- Anomalies" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2563EB;strokeWidth=2;fontSize=14;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="980" y="570" width="280" height="180" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="notes-2" value="Recommended target SaaS model&#xa;&#xa;1. Customer users access hosted UI&#xa;2. Local connector reads cluster RBAC without exposing the cluster directly to the SaaS&#xa;3. Connector sends snapshots to the backend&#xa;4. Backend stores normalized RBAC + findings in PostgreSQL&#xa;5. Frontend reads workspace-scoped data from the control plane" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#94A3B8;strokeWidth=2;fontSize=14;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1290" y="560" width="520" height="220" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e1-2" value="Uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="user-2" target="browser-2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2-2" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2563EB;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="browser-2" target="frontend-2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3-2" value="REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2563EB;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="frontend-2" target="backend-2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4-2" value="SQL / Prisma" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0F766E;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="backend-2" target="db-2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5-2" value="Reads RBAC locally" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#F59E0B;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="cluster-2" target="connector-2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6-2" value="Pushes snapshots / sync results" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#F59E0B;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="connector-2" target="backend-2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7-2" value="Feeds views" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2563EB;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;" edge="1" parent="1" source="backend-2" target="views-2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8-2" value="Optional credential storage" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#7C3AED;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;dashed=1;" edge="1" parent="1" source="backend-2" target="secrets-2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9-2" value="Scheduled sync / refresh" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#F59E0B;strokeWidth=2;endArrow=block;endFill=1;fontSize=12;dashed=1;" edge="1" parent="1" source="backend-2" target="jobs-2"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
