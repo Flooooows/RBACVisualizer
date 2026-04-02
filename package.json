@@ -1,0 +1,36 @@
+{
+  "name": "rbac-visualizer",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:backend": "npm run test --workspace @rbac/backend",
+    "test:single": "npm run test:single --workspace @rbac/backend --",
+    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "restart": "npm run stop && npm run dev",
+    "start": "concurrently \"npm:start:backend\" \"npm:start:frontend\"",
+    "dev:backend": "npm run dev --workspace @rbac/backend",
+    "dev:frontend": "npm run dev --workspace @rbac/frontend",
+    "start:backend": "npm run start --workspace @rbac/backend",
+    "start:frontend": "npm run start --workspace @rbac/frontend",
+    "start:db": "sh -c 'if podman container exists rbac-visualizer-postgres; then podman start rbac-visualizer-postgres || true; else podman run -d --name rbac-visualizer-postgres -e POSTGRES_DB=rbac_visualizer -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 docker.io/library/postgres:16-alpine; fi'",
+    "cluster:kind:create": "sh scripts/kind/create.sh",
+    "cluster:kind:delete": "sh scripts/kind/delete.sh",
+    "cluster:kind:use": "sh scripts/kind/use.sh",
+    "cluster:kind:seed": "sh scripts/kind/seed.sh",
+    "stop": "pkill -f \"next dev --hostname 0.0.0.0 --port 3000|next-server|nodemon --watch src --ext ts --exec \\\"ts-node --project tsconfig.json src/main.ts\\\"|ts-node --project tsconfig.json src/main.ts|apps/backend/dist/main.js\" || true",
+    "stop:db": "podman stop rbac-visualizer-postgres || true",
+    "db:generate": "npx prisma generate --schema apps/backend/prisma/schema.prisma",
+    "db:push": "npx prisma db push --schema apps/backend/prisma/schema.prisma",
+    "format": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prettier": "^3.3.3"
+  }
+}

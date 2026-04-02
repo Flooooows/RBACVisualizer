@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app
+  namespace: demo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: auditor
+  namespace: qa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pods-reader
+  namespace: demo
+rules:
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['get', 'list', 'watch']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: empty-role
+  namespace: demo
+rules: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-read-pods
+  namespace: demo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pods-reader
+subjects:
+  - kind: ServiceAccount
+    name: app
+    namespace: demo
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: broken-ref
+  namespace: demo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: missing-role
+subjects:
+  - kind: User
+    name: admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: wildcard-reader
+rules:
+  - apiGroups: ['*']
+    resources: ['pods', 'configmaps']
+    verbs: ['get', 'list', 'watch']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rbac-manager
+rules:
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['roles', 'rolebindings', 'clusterroles', 'clusterrolebindings']
+    verbs: ['create', 'update', 'patch', 'delete', 'bind', 'escalate']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: demo-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: app
+    namespace: demo
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: qa-rbac-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rbac-manager
+subjects:
+  - kind: ServiceAccount
+    name: auditor
+    namespace: qa

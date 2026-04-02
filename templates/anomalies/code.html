@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-bright": "#31394d",
+            "on-secondary": "#213145",
+            "outline": "#909097",
+            "secondary-fixed": "#d3e4fe",
+            "on-tertiary-container": "#019185",
+            "inverse-surface": "#dae2fd",
+            "on-primary-fixed": "#001a42",
+            "on-surface-variant": "#c6c6cd",
+            "on-secondary-fixed": "#0b1c30",
+            "primary": "#adc6ff",
+            "surface-container-lowest": "#060e20",
+            "tertiary-container": "#001c19",
+            "on-background": "#dae2fd",
+            "surface": "#0b1326",
+            "secondary": "#b7c8e1",
+            "surface-variant": "#2d3449",
+            "background": "#0b1326",
+            "surface-container-low": "#131b2e",
+            "inverse-on-surface": "#283044",
+            "primary-fixed-dim": "#adc6ff",
+            "on-error-container": "#ffdad6",
+            "surface-dim": "#0b1326",
+            "surface-container": "#171f33",
+            "inverse-primary": "#005ac2",
+            "on-primary-container": "#357df1",
+            "surface-container-highest": "#2d3449",
+            "tertiary-fixed": "#89f5e7",
+            "error": "#ffb4ab",
+            "on-tertiary-fixed": "#00201d",
+            "surface-tint": "#adc6ff",
+            "tertiary": "#6bd8cb",
+            "outline-variant": "#45464d",
+            "on-error": "#690005",
+            "primary-container": "#00163a",
+            "on-primary": "#002e6a",
+            "error-container": "#93000a",
+            "on-secondary-container": "#a9bad3",
+            "primary-fixed": "#d8e2ff",
+            "on-primary-fixed-variant": "#004395",
+            "secondary-container": "#3a4a5f",
+            "on-secondary-fixed-variant": "#38485d",
+            "surface-container-high": "#222a3d",
+            "on-tertiary": "#003732",
+            "tertiary-fixed-dim": "#6bd8cb",
+            "on-surface": "#dae2fd",
+            "on-tertiary-fixed-variant": "#005049",
+            "secondary-fixed-dim": "#b7c8e1"
+          },
+          fontFamily: {
+            "headline": ["Inter"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          },
+          borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body { font-family: 'Inter', sans-serif; background-color: #0b1326; color: #dae2fd; }
+    .glass-nav { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+  </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#131b2e] shadow-[0px_40px_40px_rgba(0,22,58,0.08)] flex justify-between items-center h-16 px-6 font-['Inter'] tracking-tight">
+<div class="flex items-center gap-8">
+<div class="text-xl font-bold tracking-tighter text-[#adc6ff]">Sentinel Oversight</div>
+<div class="hidden md:flex items-center bg-surface-container-highest px-4 py-2 rounded-xl">
+<span class="material-symbols-outlined text-on-surface-variant text-sm mr-2">search</span>
+<input class="bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant w-64" placeholder="Search anomalies..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-[#c6c6cd] hover:bg-[#2d3449] transition-colors duration-200 active:scale-95 transition-transform rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-[#c6c6cd] hover:bg-[#2d3449] transition-colors duration-200 active:scale-95 transition-transform rounded-full">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-primary/20">
+<img alt="User Profile" data-alt="Close-up professional headshot of a security analyst in a modern office, cool cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBespesYrVxtN3aR9yuvkq0C4RYf3BdCZRNaUDwzoTZtRGsr_7wwYylnN0dPBkm0bI20cN_-AJPRkiuX5rDcMU1r0MvgU-HmRS_zpgvxV5SuouRtpfDIFWrVOGYAyn-FZzL4uk_DisDMWCKmeTlL0MALM3JgOYx532djtO5wUqzM4dHYnfBw4yn7IQvo0-q89YQVKYd-3VS6-qKgGrxFXdmf_wvEY498XH9bI9VFK1FuaSnDHaMF_BcGg1qPaThNp5f1X-qXfDGhN_e"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[280px] z-40 bg-[#131b2e]/60 backdrop-blur-xl flex flex-col py-8 px-4 space-y-2 pt-24 hidden md:flex">
+<div class="mb-8 px-4">
+<div class="text-[#adc6ff] font-bold text-sm">Sentinel Admin</div>
+<div class="text-on-surface-variant text-xs">Tier 1 Access</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-[#c6c6cd] hover:bg-[#171f33] hover:text-[#dae2fd] transition-all cursor-pointer rounded-lg font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+        Dashboard
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c6c6cd] hover:bg-[#171f33] hover:text-[#dae2fd] transition-all cursor-pointer rounded-lg font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">upload_file</span>
+        Imports
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c6c6cd] hover:bg-[#171f33] hover:text-[#dae2fd] transition-all cursor-pointer rounded-lg font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">hub</span>
+        Graph
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c6c6cd] hover:bg-[#171f33] hover:text-[#dae2fd] transition-all cursor-pointer rounded-lg font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">group</span>
+        Subjects
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c6c6cd] hover:bg-[#171f33] hover:text-[#dae2fd] transition-all cursor-pointer rounded-lg font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">category</span>
+        Resources
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#adc6ff] font-bold border-r-2 border-[#adc6ff] bg-[#171f33] transition-all cursor-pointer font-['Inter'] text-sm" href="#">
+<span class="material-symbols-outlined">warning</span>
+        Anomalies
+      </a>
+</nav>
+<div class="pt-4 mt-4 border-t border-outline-variant/10">
+<a class="flex items-center gap-3 px-4 py-3 text-[#c6c6cd] hover:bg-[#171f33] transition-all cursor-pointer rounded-lg font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">help</span>
+        Help
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c6c6cd] hover:bg-[#171f33] transition-all cursor-pointer rounded-lg font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">logout</span>
+        Logout
+      </a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="pt-24 md:pl-[300px] pr-6 pb-12">
+<div class="max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+<div>
+<h1 class="text-3xl font-extrabold tracking-tight text-on-surface mb-2 font-headline">Detection Intelligence</h1>
+<p class="text-on-surface-variant max-w-2xl">Real-time risk assessment and role-based anomaly detection for the Sentinel ecosystem.</p>
+</div>
+<div class="flex gap-3">
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-on-primary-container/20 transition-all">
+<span class="material-symbols-outlined text-sm">refresh</span>
+            Run Global Audit
+          </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
+<!-- Trends Chart Area -->
+<div class="lg:col-span-8 bg-surface-container-low rounded-xl p-6 relative overflow-hidden group">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-lg font-semibold text-on-surface">Risk Distribution Trend</h3>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-surface-container-highest rounded-full text-xs font-medium text-on-surface-variant">Last 30 Days</span>
+</div>
+</div>
+<div class="h-64 flex items-end justify-between gap-2 px-4">
+<!-- Simulated Chart Bars -->
+<div class="flex-1 bg-error/20 rounded-t-lg transition-all duration-500 hover:bg-error/40 h-[40%]" title="Critical"></div>
+<div class="flex-1 bg-on-primary-container/20 rounded-t-lg transition-all duration-500 hover:bg-on-primary-container/40 h-[55%]" title="High"></div>
+<div class="flex-1 bg-tertiary/20 rounded-t-lg transition-all duration-500 hover:bg-tertiary/40 h-[30%]" title="Medium"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-lg transition-all duration-500 hover:bg-on-surface-variant/20 h-[80%]" title="Normal Activity"></div>
+<div class="flex-1 bg-error/20 rounded-t-lg transition-all duration-500 hover:bg-error/40 h-[45%]" title="Critical"></div>
+<div class="flex-1 bg-on-primary-container/20 rounded-t-lg transition-all duration-500 hover:bg-on-primary-container/40 h-[65%]" title="High"></div>
+<div class="flex-1 bg-tertiary/20 rounded-t-lg transition-all duration-500 hover:bg-tertiary/40 h-[25%]" title="Medium"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-lg transition-all duration-500 hover:bg-on-surface-variant/20 h-[95%]" title="Normal Activity"></div>
+</div>
+<div class="mt-4 flex justify-between text-[10px] text-on-surface-variant uppercase tracking-widest px-2">
+<span>Aug 01</span>
+<span>Aug 10</span>
+<span>Aug 20</span>
+<span>Aug 30</span>
+</div>
+</div>
+<!-- Stats Overview -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<div class="bg-error-container/20 p-6 rounded-xl flex flex-col justify-between h-1/2">
+<div>
+<div class="text-error font-bold text-xs uppercase tracking-tighter mb-1">Critical Anomalies</div>
+<div class="text-4xl font-black text-on-error-container">12</div>
+</div>
+<div class="text-xs text-on-error-container/60">+4 since last scan</div>
+</div>
+<div class="bg-surface-container p-6 rounded-xl flex flex-col justify-between h-1/2">
+<div>
+<div class="text-primary font-bold text-xs uppercase tracking-tighter mb-1">Active Remediation</div>
+<div class="text-4xl font-black text-on-surface">88%</div>
+</div>
+<div class="text-xs text-on-surface-variant">Efficiency optimized</div>
+</div>
+</div>
+</div>
+<!-- Anomaly List Section -->
+<div class="space-y-4">
+<h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+          Active Risk Registry
+        </h2>
+<!-- Card: Over-privileged User -->
+<div class="group bg-surface-container-low hover:bg-surface-container transition-all p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start md:items-center">
+<div class="h-12 w-12 rounded-full bg-error/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-error">security_update_warning</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-1">
+<h3 class="text-lg font-bold text-on-surface">Over-privileged User</h3>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container text-[10px] font-bold uppercase tracking-wide">Critical</span>
+</div>
+<p class="text-sm text-on-surface-variant max-w-xl">User <span class="text-primary">j.vance_security</span> has accumulated 14 distinct admin permissions over 6 months without using 80% of the allocated scope. Potential privilege creep detected.</p>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-5 py-2 text-sm font-semibold bg-surface-container-highest hover:bg-surface-bright rounded-lg transition-colors">Review</button>
+<button class="flex-1 md:flex-none px-5 py-2 text-sm font-semibold bg-primary text-on-primary rounded-lg hover:brightness-110 transition-all">Remediate</button>
+</div>
+</div>
+<!-- Card: Dormant Account -->
+<div class="group bg-surface-container-low hover:bg-surface-container transition-all p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start md:items-center">
+<div class="h-12 w-12 rounded-full bg-on-primary-container/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-on-primary-container">person_off</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-1">
+<h3 class="text-lg font-bold text-on-surface">Dormant Account with Admin Rights</h3>
+<span class="px-2 py-0.5 rounded-full bg-on-primary-container/20 text-on-primary-container text-[10px] font-bold uppercase tracking-wide">High</span>
+</div>
+<p class="text-sm text-on-surface-variant max-w-xl">Account <span class="text-primary">ext_contractor_4</span> remains active with 'Superuser' access despite 90 days of zero login activity. Violates policy P-204.</p>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-5 py-2 text-sm font-semibold bg-surface-container-highest hover:bg-surface-bright rounded-lg transition-colors">Review</button>
+<button class="flex-1 md:flex-none px-5 py-2 text-sm font-semibold bg-primary text-on-primary rounded-lg hover:brightness-110 transition-all">Remediate</button>
+</div>
+</div>
+<!-- Card: Circular Role Reference -->
+<div class="group bg-surface-container-low hover:bg-surface-container transition-all p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start md:items-center">
+<div class="h-12 w-12 rounded-full bg-tertiary/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-tertiary">sync_problem</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-1">
+<h3 class="text-lg font-bold text-on-surface">Circular Role Reference</h3>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary text-[10px] font-bold uppercase tracking-wide">Medium</span>
+</div>
+<p class="text-sm text-on-surface-variant max-w-xl">Role 'Audit_Lead' inherits from 'System_Admin' which indirectly inherits from 'Audit_Lead'. This loop causes privilege escalation vulnerabilities.</p>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-5 py-2 text-sm font-semibold bg-surface-container-highest hover:bg-surface-bright rounded-lg transition-colors">Review</button>
+<button class="flex-1 md:flex-none px-5 py-2 text-sm font-semibold bg-primary text-on-primary rounded-lg hover:brightness-110 transition-all">Remediate</button>
+</div>
+</div>
+<!-- Card: Low Priority / Geo Anomaly -->
+<div class="group bg-surface-container-low hover:bg-surface-container transition-all p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start md:items-center opacity-80">
+<div class="h-12 w-12 rounded-full bg-on-surface-variant/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant">location_on</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-1">
+<h3 class="text-lg font-bold text-on-surface">Unusual Access Location</h3>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase tracking-wide">Low</span>
+</div>
+<p class="text-sm text-on-surface-variant max-w-xl">Successful login detected from VPN gateway in Amsterdam for user <span class="text-primary">m.chen</span>. Deviates from typical West Coast US patterns.</p>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-5 py-2 text-sm font-semibold bg-surface-container-highest hover:bg-surface-bright rounded-lg transition-colors">Review</button>
+<button class="flex-1 md:flex-none px-5 py-2 text-sm font-semibold bg-primary text-on-primary rounded-lg hover:brightness-110 transition-all">Remediate</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile Bottom NavBar -->
+<div class="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-low border-t border-outline-variant/10 flex justify-around items-center h-16 z-50 glass-nav">
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px]">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined">warning</span>
+<span class="text-[10px]">Anomalies</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">hub</span>
+<span class="text-[10px]">Graph</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px]">Profile</span>
+</button>
+</div>
+</body></html>

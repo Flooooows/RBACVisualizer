@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ImportSourceType {
+  YAML
+  JSON
+}
+
+enum SnapshotStatus {
+  RECEIVED
+  PARSING
+  VALIDATING
+  NORMALIZING
+  COMPLETED
+  COMPLETED_WITH_WARNINGS
+  FAILED
+}
+
+enum SubjectKind {
+  USER
+  GROUP
+  SERVICE_ACCOUNT
+}
+
+enum SubjectOrigin {
+  BINDING
+  MANIFEST
+  BOTH
+}
+
+enum RoleRefKind {
+  ROLE
+  CLUSTER_ROLE
+}
+
+enum FindingType {
+  CLUSTER_ADMIN_USAGE
+  WILDCARD_PERMISSION
+  SENSITIVE_RESOURCE_FULL_ACCESS
+  REDUNDANT_BINDING_PATH
+  EMPTY_ROLE
+  UNUSED_ROLE
+  BROKEN_ROLE_REF
+  EXCESSIVE_PRIVILEGE
+}
+
+enum FindingSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model ImportSnapshot {
+  id                  String               @id @default(cuid())
+  sourceType          ImportSourceType
+  sourceLabel         String?
+  status              SnapshotStatus       @default(RECEIVED)
+  importedAt          DateTime             @default(now())
+  completedAt         DateTime?
+  checksum            String?
+  rawManifests        RawManifest[]
+  namespaces          Namespace[]
+  subjects            Subject[]
+  roles               Role[]
+  clusterRoles        ClusterRole[]
+  roleBindings        RoleBinding[]
+  clusterRoleBindings ClusterRoleBinding[]
+  findings            AnalysisFinding[]
+
+  @@index([importedAt])
+}
+
+model RawManifest {
+  id            String         @id @default(cuid())
+  snapshotId    String
+  apiVersion    String
+  kind          String
+  namespace     String?
+  name          String
+  uid           String?
+  labels        Json?
+  annotations   Json?
+  documentOrder Int?
+  manifest      Json
+  createdAt     DateTime       @default(now())
+  snapshot      ImportSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, kind, namespace, name])
+  @@index([snapshotId, kind])
+  @@index([snapshotId, namespace])
+}
+
+model Namespace {
+  id           String         @id @default(cuid())
+  snapshotId   String
+  name         String
+  labels       Json?
+  annotations  Json?
+  snapshot     ImportSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  roles        Role[]
+  roleBindings RoleBinding[]
+
+  @@unique([snapshotId, name])
+  @@index([snapshotId])
+}
+
+model Subject {
+  id                       String                      @id @default(cuid())
+  snapshotId               String
+  kind                     SubjectKind
+  name                     String
+  namespace                String?
+  origin                   SubjectOrigin               @default(BINDING)
+  snapshot                 ImportSnapshot              @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  roleBindingSubjects      RoleBindingSubject[]
+  clusterRoleBindingSubjects ClusterRoleBindingSubject[]
+  findings                 AnalysisFinding[]
+
+  @@unique([snapshotId, kind, name, namespace])
+  @@index([snapshotId, kind, name])
+  @@index([snapshotId, namespace])
+}
+
+model Role {
+  id                   String          @id @default(cuid())
+  snapshotId           String
+  namespace            String
+  name                 String
+  labels               Json?
+  annotations          Json?
+  snapshot             ImportSnapshot  @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  namespaceRef         Namespace       @relation(fields: [snapshotId, namespace], references: [snapshotId, name], onDelete: Restrict)
+  rules                RoleRule[]
+  referencedByBindings RoleBinding[]   @relation("RoleBindingRoleRefRole")
+  findings             AnalysisFinding[]
+
+  @@unique([snapshotId, namespace, name])
+  @@index([snapshotId, namespace])
+}
+
+model RoleRule {
+  id              String   @id @default(cuid())
+  roleId          String
+  ruleOrder       Int
+  apiGroups       String[] @default([])
+  resources       String[] @default([])
+  verbs           String[] @default([])
+  resourceNames   String[] @default([])
+  nonResourceURLs String[] @default([])
+  role            Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, ruleOrder])
+  @@index([roleId])
+}
+
+model ClusterRole {
+  id                             String               @id @default(cuid())
+  snapshotId                     String
+  name                           String
+  labels                         Json?
+  annotations                    Json?
+  aggregationRule                Json?
+  snapshot                       ImportSnapshot       @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  rules                          ClusterRoleRule[]
+  referencedByRoleBindings       RoleBinding[]        @relation("RoleBindingRoleRefClusterRole")
+  referencedByClusterRoleBindings ClusterRoleBinding[] @relation("ClusterRoleBindingRoleRefClusterRole")
+  findings                       AnalysisFinding[]
+
+  @@unique([snapshotId, name])
+  @@index([snapshotId])
+}
+
+model ClusterRoleRule {
+  id              String      @id @default(cuid())
+  clusterRoleId   String
+  ruleOrder       Int
+  apiGroups       String[]    @default([])
+  resources       String[]    @default([])
+  verbs           String[]    @default([])
+  resourceNames   String[]    @default([])
+  nonResourceURLs String[]    @default([])
+  clusterRole     ClusterRole @relation(fields: [clusterRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([clusterRoleId, ruleOrder])
+  @@index([clusterRoleId])
+}
+
+model RoleBinding {
+  id                   String          @id @default(cuid())
+  snapshotId           String
+  namespace            String
+  name                 String
+  labels               Json?
+  annotations          Json?
+  roleRefKind          RoleRefKind
+  roleRefApiGroup      String          @default("rbac.authorization.k8s.io")
+  roleRefName          String
+  roleRefRoleId        String?
+  roleRefClusterRoleId String?
+  isRoleRefResolved    Boolean         @default(false)
+  snapshot             ImportSnapshot  @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  namespaceRef         Namespace       @relation(fields: [snapshotId, namespace], references: [snapshotId, name], onDelete: Restrict)
+  roleRefRole          Role?           @relation("RoleBindingRoleRefRole", fields: [roleRefRoleId], references: [id], onDelete: SetNull)
+  roleRefClusterRole   ClusterRole?    @relation("RoleBindingRoleRefClusterRole", fields: [roleRefClusterRoleId], references: [id], onDelete: SetNull)
+  subjects             RoleBindingSubject[]
+  findings             AnalysisFinding[]
+
+  @@unique([snapshotId, namespace, name])
+  @@index([snapshotId, namespace])
+  @@index([snapshotId, roleRefKind, roleRefName])
+  @@index([roleRefRoleId])
+  @@index([roleRefClusterRoleId])
+}
+
+model RoleBindingSubject {
+  id            String      @id @default(cuid())
+  roleBindingId String
+  subjectId     String
+  roleBinding   RoleBinding @relation(fields: [roleBindingId], references: [id], onDelete: Cascade)
+  subject       Subject     @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([roleBindingId, subjectId])
+  @@index([subjectId])
+}
+
+model ClusterRoleBinding {
+  id                   String                     @id @default(cuid())
+  snapshotId           String
+  name                 String
+  labels               Json?
+  annotations          Json?
+  roleRefApiGroup      String                     @default("rbac.authorization.k8s.io")
+  roleRefName          String
+  roleRefClusterRoleId String?
+  isRoleRefResolved    Boolean                    @default(false)
+  snapshot             ImportSnapshot             @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  roleRefClusterRole   ClusterRole?               @relation("ClusterRoleBindingRoleRefClusterRole", fields: [roleRefClusterRoleId], references: [id], onDelete: SetNull)
+  subjects             ClusterRoleBindingSubject[]
+  findings             AnalysisFinding[]
+
+  @@unique([snapshotId, name])
+  @@index([snapshotId, roleRefName])
+  @@index([roleRefClusterRoleId])
+}
+
+model ClusterRoleBindingSubject {
+  id                   String             @id @default(cuid())
+  clusterRoleBindingId String
+  subjectId            String
+  clusterRoleBinding   ClusterRoleBinding @relation(fields: [clusterRoleBindingId], references: [id], onDelete: Cascade)
+  subject              Subject            @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([clusterRoleBindingId, subjectId])
+  @@index([subjectId])
+}
+
+model AnalysisFinding {
+  id                   String              @id @default(cuid())
+  snapshotId           String
+  type                 FindingType
+  severity             FindingSeverity
+  title                String
+  details              Json?
+  createdAt            DateTime            @default(now())
+  subjectId            String?
+  roleId               String?
+  clusterRoleId        String?
+  roleBindingId        String?
+  clusterRoleBindingId String?
+  snapshot             ImportSnapshot      @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  subject              Subject?            @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  role                 Role?               @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  clusterRole          ClusterRole?        @relation(fields: [clusterRoleId], references: [id], onDelete: SetNull)
+  roleBinding          RoleBinding?        @relation(fields: [roleBindingId], references: [id], onDelete: SetNull)
+  clusterRoleBinding   ClusterRoleBinding? @relation(fields: [clusterRoleBindingId], references: [id], onDelete: SetNull)
+
+  @@index([snapshotId, type, severity])
+  @@index([subjectId])
+}
