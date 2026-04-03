@@ -1,7 +1,9 @@
 import type {
   FindingSeverity,
   FindingType,
+  ImportRunStatus,
   ImportSourceType,
+  ImportTrigger,
   RoleRefKind,
   SnapshotStatus,
   SubjectKind,
@@ -11,7 +13,9 @@ import type {
 export type {
   FindingSeverity,
   FindingType,
+  ImportRunStatus,
   ImportSourceType,
+  ImportTrigger,
   RoleRefKind,
   SnapshotStatus,
   SubjectKind,
@@ -70,11 +74,13 @@ export type ParsedManifestDocument = {
 export type ImportEnvelope = {
   sourceLabel?: string;
   sourceType?: ImportSourceType;
+  projectId?: string;
   raw?: string;
   manifests?: unknown;
 };
 
 export type ParsedImportRequest = {
+  projectId: string | null;
   sourceType: ImportSourceType;
   sourceLabel: string | null;
   documents: ParsedManifestDocument[];
@@ -172,6 +178,10 @@ export type PersistedImportSummary = {
 
 export type PersistedImportResult = {
   importId: string;
+  projectId: string;
+  importRunId: string;
+  importRunStatus: ImportRunStatus;
+  importTrigger: ImportTrigger;
   status: SnapshotStatus;
   sourceType: ImportSourceType;
   sourceLabel: string | null;

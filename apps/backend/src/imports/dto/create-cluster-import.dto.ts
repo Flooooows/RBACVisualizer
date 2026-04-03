@@ -4,6 +4,11 @@ export class CreateClusterImportDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
   kubeconfigPath?: string;
 
   @IsOptional()

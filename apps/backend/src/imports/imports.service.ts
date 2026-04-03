@@ -1,5 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { FindingSeverity, FindingType, Prisma, RoleRefKind, SnapshotStatus } from '@prisma/client';
+import {
+  FindingSeverity,
+  FindingType,
+  ImportRunStatus,
+  ImportTrigger,
+  Prisma,
+  RoleRefKind,
+  SnapshotStatus,
+} from '@prisma/client';
 import { createHash } from 'node:crypto';
 import { ImportValidationException } from './import.errors';
 import { parseImportRequest } from './import.parser';
@@ -8,6 +16,7 @@ import { PrismaService } from '../persistence/prisma.service';
 import { ClusterRbacReaderService } from './cluster-rbac-reader.service';
 import { ClusterStatusDto } from './dto/cluster-status.dto';
 import { CreateClusterImportDto } from './dto/create-cluster-import.dto';
+import { ensureProjectScope } from './import.scope';
 import type {
   ImportIssue,
   PersistedImportResult,
@@ -120,6 +129,7 @@ export class ImportsService {
 
     return this.createImport({
       body: {
+        projectId: input.projectId,
         sourceType: 'JSON',
         sourceLabel: input.sourceLabel ?? `cluster:${clusterReadResult.contextName}`,
         manifests: clusterReadResult.manifests,
@@ -137,8 +147,19 @@ export class ImportsService {
     contentType?: string;
   }): Promise<PersistedImportResult> {
     const parsed = parseImportRequest(input.body, input.contentType);
+    const projectId = await ensureProjectScope(this.prisma, parsed.projectId);
+    const importRun = await this.prisma.importRun.create({
+      data: {
+        projectId,
+        trigger: ImportTrigger.MANUAL,
+        status: ImportRunStatus.QUEUED,
+      },
+    });
+
     const snapshot = await this.prisma.importSnapshot.create({
       data: {
+        projectId,
+        importRunId: importRun.id,
         sourceType: parsed.sourceType,
         sourceLabel: parsed.sourceLabel,
         status: SnapshotStatus.RECEIVED,
@@ -149,6 +170,11 @@ export class ImportsService {
     });
 
     try {
+      await this.prisma.importRun.update({
+        where: { id: importRun.id },
+        data: { status: ImportRunStatus.RUNNING },
+      });
+
       await this.prisma.importSnapshot.update({
         where: { id: snapshot.id },
         data: { status: SnapshotStatus.VALIDATING },
@@ -664,7 +690,17 @@ export class ImportsService {
           },
         });
 
+        await tx.importRun.update({
+          where: { id: importRun.id },
+          data: {
+            status: ImportRunStatus.COMPLETED,
+            finishedAt: completedAt,
+          },
+        });
+
         return {
+          projectId,
+          importRunId: importRun.id,
           warnings,
           status,
           completedAt,
@@ -688,6 +724,10 @@ export class ImportsService {
 
       return {
         importId: snapshot.id,
+        projectId: result.projectId,
+        importRunId: result.importRunId,
+        importRunStatus: ImportRunStatus.COMPLETED,
+        importTrigger: ImportTrigger.MANUAL,
         status: result.status,
         sourceType: parsed.sourceType,
         sourceLabel: parsed.sourceLabel,
@@ -697,6 +737,15 @@ export class ImportsService {
         finishedAt: result.completedAt.toISOString(),
       };
     } catch (error) {
+      await this.prisma.importRun.update({
+        where: { id: importRun.id },
+        data: {
+          status: ImportRunStatus.FAILED,
+          finishedAt: new Date(),
+          errorSummary: error instanceof Error ? error.message : 'Unknown import error.',
+        },
+      });
+
       await this.prisma.importSnapshot.update({
         where: { id: snapshot.id },
         data: {
@@ -729,6 +778,7 @@ export class ImportsService {
     return {
       items: snapshots.map((snapshot) => ({
         id: snapshot.id,
+        projectId: snapshot.projectId,
         status: snapshot.status,
         sourceType: snapshot.sourceType,
         sourceLabel: snapshot.sourceLabel,
@@ -787,6 +837,7 @@ export class ImportsService {
 
     return {
       id: snapshot.id,
+      projectId: snapshot.projectId,
       status: snapshot.status,
       sourceType: snapshot.sourceType,
       sourceLabel: snapshot.sourceLabel,

@@ -113,6 +113,7 @@ export function parseImportRequest(body: unknown, contentType?: string): ParsedI
   }
 
   let sourceLabel: string | null = null;
+  let projectId: string | null = null;
   let sourceType: ImportSourceType = 'JSON';
   let documents: Record<string, unknown>[] = [];
 
@@ -121,6 +122,7 @@ export function parseImportRequest(body: unknown, contentType?: string): ParsedI
     documents = parseYamlDocuments(body);
   } else if (isEnvelope(body)) {
     sourceLabel = typeof body.sourceLabel === 'string' ? body.sourceLabel : null;
+    projectId = typeof body.projectId === 'string' ? body.projectId : null;
     sourceType = body.sourceType ?? 'JSON';
 
     if (typeof body.raw === 'string') {
@@ -162,6 +164,7 @@ export function parseImportRequest(body: unknown, contentType?: string): ParsedI
   }
 
   return {
+    projectId,
     sourceType,
     sourceLabel,
     documents: documents.map((manifest, index) => ({

@@ -171,6 +171,19 @@ npm run start
 
 If you are just testing iteratively during development, `npm run db:push` remains acceptable.
 
+### Current SaaS bootstrap behavior
+
+The phase 1 SaaS data model is now present in the database:
+
+- `Account`
+- `Workspace`
+- `WorkspaceMembership`
+- `Project`
+- `ClusterConnection`
+- `ImportRun`
+
+For now, if you create imports without an explicit SaaS project context, the backend automatically creates and reuses a **legacy workspace/project scope** so the existing local flows keep working while SaaS ownership is being introduced.
+
 ## Quick manual test
 
 1. Open `http://localhost:3000/imports`

@@ -57,6 +57,165 @@ enum FindingSeverity {
   CRITICAL
 }
 
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+  BILLING
+}
+
+enum WorkspacePlanTier {
+  FREE
+  TEAM
+  ENTERPRISE
+}
+
+enum WorkspaceStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum ClusterProvider {
+  KUBERNETES
+  OPENSHIFT
+}
+
+enum ClusterConnectionStatus {
+  ACTIVE
+  DISABLED
+  ERROR
+}
+
+enum ImportTrigger {
+  MANUAL
+  SCHEDULED
+  API
+}
+
+enum ImportRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum BillingSubscriptionStatus {
+  NONE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Account {
+  id                        String               @id @default(cuid())
+  email                     String               @unique
+  displayName               String?
+  avatarUrl                 String?
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+  memberships               WorkspaceMembership[]
+  ownedWorkspaces           Workspace[]          @relation("WorkspaceOwner")
+  createdClusterConnections ClusterConnection[]  @relation("ClusterConnectionCreatedBy")
+  triggeredImportRuns       ImportRun[]          @relation("ImportRunTriggeredBy")
+}
+
+model Workspace {
+  id             String                @id @default(cuid())
+  slug           String                @unique
+  name           String
+  ownerAccountId String
+  planTier       WorkspacePlanTier     @default(FREE)
+  status         WorkspaceStatus       @default(ACTIVE)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  owner          Account               @relation("WorkspaceOwner", fields: [ownerAccountId], references: [id], onDelete: Restrict)
+  memberships    WorkspaceMembership[]
+  projects       Project[]
+  billing        WorkspaceBilling?
+  usageMonthly   WorkspaceUsageMonthly[]
+
+  @@index([ownerAccountId])
+}
+
+model WorkspaceMembership {
+  id                 String        @id @default(cuid())
+  workspaceId        String
+  accountId          String
+  role               WorkspaceRole
+  invitedByAccountId String?
+  joinedAt           DateTime      @default(now())
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  workspace          Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account            Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, accountId])
+  @@index([accountId])
+  @@index([workspaceId, role])
+}
+
+model Project {
+  id                 String              @id @default(cuid())
+  workspaceId        String
+  slug               String
+  name               String
+  description        String?
+  isArchived         Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  workspace          Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  clusterConnections ClusterConnection[]
+  importRuns         ImportRun[]
+  snapshots          ImportSnapshot[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId, isArchived])
+}
+
+model ClusterConnection {
+  id                 String                  @id @default(cuid())
+  projectId          String
+  name               String
+  provider           ClusterProvider
+  apiServerHost      String?
+  authRef            String?
+  status             ClusterConnectionStatus @default(ACTIVE)
+  createdByAccountId String?
+  lastValidatedAt    DateTime?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  project            Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy          Account?                @relation("ClusterConnectionCreatedBy", fields: [createdByAccountId], references: [id], onDelete: SetNull)
+  importRuns         ImportRun[]
+
+  @@unique([projectId, name])
+  @@index([projectId, status])
+}
+
+model ImportRun {
+  id                   String          @id @default(cuid())
+  projectId            String
+  clusterConnectionId  String?
+  triggeredByAccountId String?
+  trigger              ImportTrigger
+  status               ImportRunStatus @default(QUEUED)
+  startedAt            DateTime        @default(now())
+  finishedAt           DateTime?
+  errorSummary         String?
+  project              Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clusterConnection    ClusterConnection? @relation(fields: [clusterConnectionId], references: [id], onDelete: SetNull)
+  triggeredBy          Account?        @relation("ImportRunTriggeredBy", fields: [triggeredByAccountId], references: [id], onDelete: SetNull)
+  snapshot             ImportSnapshot? @relation("ImportRunSnapshot")
+
+  @@index([projectId, startedAt])
+  @@index([status, startedAt])
+  @@index([clusterConnectionId])
+}
+
 model ImportSnapshot {
   id                  String               @id @default(cuid())
   sourceType          ImportSourceType
@@ -65,6 +224,8 @@ model ImportSnapshot {
   importedAt          DateTime             @default(now())
   completedAt         DateTime?
   checksum            String?
+  projectId           String?
+  importRunId         String?              @unique
   rawManifests        RawManifest[]
   namespaces          Namespace[]
   subjects            Subject[]
@@ -73,8 +234,35 @@ model ImportSnapshot {
   roleBindings        RoleBinding[]
   clusterRoleBindings ClusterRoleBinding[]
   findings            AnalysisFinding[]
+  project             Project?             @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  importRun           ImportRun?           @relation("ImportRunSnapshot", fields: [importRunId], references: [id], onDelete: SetNull)
 
   @@index([importedAt])
+  @@index([projectId, importedAt])
+}
+
+model WorkspaceBilling {
+  id                 String                    @id @default(cuid())
+  workspaceId        String                    @unique
+  billingEmail       String?
+  providerCustomerId String?                   @unique
+  subscriptionStatus BillingSubscriptionStatus @default(NONE)
+  updatedAt          DateTime                  @updatedAt
+  workspace          Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model WorkspaceUsageMonthly {
+  id                String    @id @default(cuid())
+  workspaceId       String
+  periodStart       DateTime
+  importRunCount    Int       @default(0)
+  snapshotCount     Int       @default(0)
+  activeMemberCount Int       @default(0)
+  updatedAt         DateTime  @updatedAt
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, periodStart])
+  @@index([periodStart])
 }
 
 model RawManifest {

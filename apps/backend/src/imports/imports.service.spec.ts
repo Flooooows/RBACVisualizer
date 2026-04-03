@@ -38,12 +38,32 @@ function createImportsServiceMock() {
       create: jest.fn(),
       count: jest.fn(),
     },
+    importRun: {
+      update: jest.fn(),
+    },
   };
 
   const prisma = {
+    account: {
+      upsert: jest.fn(),
+    },
+    workspace: {
+      upsert: jest.fn(),
+    },
+    workspaceMembership: {
+      upsert: jest.fn(),
+    },
+    project: {
+      upsert: jest.fn(),
+    },
+    importRun: {
+      create: jest.fn(),
+      update: jest.fn(),
+    },
     importSnapshot: {
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     $transaction: jest.fn(async (callback: (transaction: typeof tx) => Promise<unknown>) =>
       callback(tx),
@@ -66,11 +86,20 @@ describe('ImportsService', () => {
   it('creates a snapshot with warning when roleRef is unresolved', async () => {
     const { service, prisma, tx } = createImportsServiceMock();
 
+    prisma.account.upsert.mockResolvedValue({ id: 'account-legacy' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-legacy' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-legacy' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-legacy' });
+    prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
+    prisma.importRun.create.mockResolvedValue({ id: 'import-run-1' });
+
     prisma.importSnapshot.create.mockResolvedValue({
       id: 'snapshot-1',
+      projectId: 'project-legacy',
       importedAt: new Date('2026-04-01T00:00:00.000Z'),
     });
     prisma.importSnapshot.update.mockResolvedValue(undefined);
+    prisma.importRun.update.mockResolvedValue(undefined);
 
     tx.importSnapshot.update.mockResolvedValue(undefined);
     tx.rawManifest.createMany.mockResolvedValue(undefined);
@@ -89,6 +118,7 @@ describe('ImportsService', () => {
     tx.roleBindingSubject.create.mockResolvedValue(undefined);
     tx.analysisFinding.create.mockResolvedValue(undefined);
     tx.analysisFinding.count.mockResolvedValue(1);
+    tx.importRun.update.mockResolvedValue(undefined);
 
     const result = await service.createImport({
       body: {
@@ -109,6 +139,8 @@ describe('ImportsService', () => {
     });
 
     expect(result.importId).toBe('snapshot-1');
+    expect(result.projectId).toBe('project-legacy');
+    expect(result.importRunId).toBe('import-run-1');
     expect(result.status).toBe(SnapshotStatus.COMPLETED_WITH_WARNINGS);
     expect(result.summary.warningsCount).toBe(1);
     expect(tx.roleBinding.create).toHaveBeenCalledWith(
@@ -125,11 +157,20 @@ describe('ImportsService', () => {
   it('creates anomaly findings for wildcard, empty, unused, and cluster-admin patterns', async () => {
     const { service, prisma, tx } = createImportsServiceMock();
 
+    prisma.account.upsert.mockResolvedValue({ id: 'account-legacy' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-legacy' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-legacy' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-legacy' });
+    prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
+    prisma.importRun.create.mockResolvedValue({ id: 'import-run-2' });
+
     prisma.importSnapshot.create.mockResolvedValue({
       id: 'snapshot-2',
+      projectId: 'project-legacy',
       importedAt: new Date('2026-04-01T00:10:00.000Z'),
     });
     prisma.importSnapshot.update.mockResolvedValue(undefined);
+    prisma.importRun.update.mockResolvedValue(undefined);
     tx.importSnapshot.update.mockResolvedValue(undefined);
     tx.rawManifest.createMany.mockResolvedValue(undefined);
     tx.namespace.createMany.mockResolvedValue(undefined);
@@ -151,6 +192,7 @@ describe('ImportsService', () => {
     tx.clusterRoleBindingSubject.create.mockResolvedValue(undefined);
     tx.analysisFinding.create.mockResolvedValue(undefined);
     tx.analysisFinding.count.mockResolvedValue(5);
+    tx.importRun.update.mockResolvedValue(undefined);
 
     const result = await service.createImport({
       body: {
@@ -189,6 +231,7 @@ describe('ImportsService', () => {
     });
 
     expect(result.status).toBe(SnapshotStatus.COMPLETED);
+    expect(result.projectId).toBe('project-legacy');
     expect(tx.analysisFinding.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -222,11 +265,20 @@ describe('ImportsService', () => {
   it('creates sensitive resource and excessive privilege findings', async () => {
     const { service, prisma, tx } = createImportsServiceMock();
 
+    prisma.account.upsert.mockResolvedValue({ id: 'account-legacy' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-legacy' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-legacy' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-legacy' });
+    prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
+    prisma.importRun.create.mockResolvedValue({ id: 'import-run-3' });
+
     prisma.importSnapshot.create.mockResolvedValue({
       id: 'snapshot-3',
+      projectId: 'project-legacy',
       importedAt: new Date('2026-04-01T00:20:00.000Z'),
     });
     prisma.importSnapshot.update.mockResolvedValue(undefined);
+    prisma.importRun.update.mockResolvedValue(undefined);
     tx.importSnapshot.update.mockResolvedValue(undefined);
     tx.rawManifest.createMany.mockResolvedValue(undefined);
     tx.namespace.createMany.mockResolvedValue(undefined);
@@ -235,6 +287,7 @@ describe('ImportsService', () => {
     tx.clusterRole.create.mockResolvedValueOnce({ id: 'cluster-role-sensitive' });
     tx.analysisFinding.create.mockResolvedValue(undefined);
     tx.analysisFinding.count.mockResolvedValue(3);
+    tx.importRun.update.mockResolvedValue(undefined);
 
     const result = await service.createImport({
       body: {
@@ -267,6 +320,7 @@ describe('ImportsService', () => {
     });
 
     expect(result.status).toBe(SnapshotStatus.COMPLETED);
+    expect(result.projectId).toBe('project-legacy');
     expect(tx.analysisFinding.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -286,11 +340,20 @@ describe('ImportsService', () => {
   it('creates a cluster import from cluster reader results', async () => {
     const { service, clusterRbacReaderService, prisma, tx } = createImportsServiceMock();
 
+    prisma.account.upsert.mockResolvedValue({ id: 'account-legacy' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-legacy' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-legacy' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-legacy' });
+    prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
+    prisma.importRun.create.mockResolvedValue({ id: 'import-run-cluster-1' });
+
     prisma.importSnapshot.create.mockResolvedValue({
       id: 'snapshot-cluster-1',
+      projectId: 'project-legacy',
       importedAt: new Date('2026-04-01T00:30:00.000Z'),
     });
     prisma.importSnapshot.update.mockResolvedValue(undefined);
+    prisma.importRun.update.mockResolvedValue(undefined);
     tx.importSnapshot.update.mockResolvedValue(undefined);
     tx.rawManifest.createMany.mockResolvedValue(undefined);
     tx.namespace.createMany.mockResolvedValue(undefined);
@@ -299,6 +362,7 @@ describe('ImportsService', () => {
     tx.clusterRole.create.mockResolvedValueOnce({ id: 'cluster-role-view' });
     tx.analysisFinding.create.mockResolvedValue(undefined);
     tx.analysisFinding.count.mockResolvedValue(1);
+    tx.importRun.update.mockResolvedValue(undefined);
 
     clusterRbacReaderService.readRbacResources.mockResolvedValue({
       contextName: 'kind-rbac-visualizer',
@@ -322,6 +386,8 @@ describe('ImportsService', () => {
       kubeconfigPath: '/tmp/test-kubeconfig',
     });
     expect(result.importId).toBe('snapshot-cluster-1');
+    expect(result.projectId).toBe('project-legacy');
+    expect(result.importRunId).toBe('import-run-cluster-1');
     expect(result.sourceLabel).toBe('cluster:kind-rbac-visualizer');
   });
 });
