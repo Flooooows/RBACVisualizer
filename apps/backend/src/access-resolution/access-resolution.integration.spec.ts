@@ -4,12 +4,25 @@ import { AccessResolutionService } from './access-resolution.service';
 function buildServiceMock(): {
   service: AccessResolutionService;
   prisma: {
+    account: {
+      upsert: jest.Mock;
+    };
+    workspace: {
+      upsert: jest.Mock;
+    };
+    workspaceMembership: {
+      upsert: jest.Mock;
+    };
+    project: {
+      upsert: jest.Mock;
+    };
     subject: {
       findFirst: jest.Mock;
       findMany: jest.Mock;
     };
     importSnapshot: {
-      findUnique: jest.Mock;
+      findFirst: jest.Mock;
+      updateMany: jest.Mock;
     };
     analysisFinding: {
       findMany: jest.Mock;
@@ -17,12 +30,25 @@ function buildServiceMock(): {
   };
 } {
   const prisma = {
+    account: {
+      upsert: jest.fn(),
+    },
+    workspace: {
+      upsert: jest.fn(),
+    },
+    workspaceMembership: {
+      upsert: jest.fn(),
+    },
+    project: {
+      upsert: jest.fn(),
+    },
     subject: {
       findFirst: jest.fn(),
       findMany: jest.fn(),
     },
     importSnapshot: {
-      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      updateMany: jest.fn(),
     },
     analysisFinding: {
       findMany: jest.fn(),
@@ -73,6 +99,12 @@ function createSubjectFixture() {
 describe('AccessResolutionService integration', () => {
   it('returns resolved subject access paths', async () => {
     const { service, prisma } = buildServiceMock();
+    prisma.account.upsert.mockResolvedValue({ id: 'account-default' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-default' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-default' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-default' });
+    prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
+    prisma.importSnapshot.findFirst.mockResolvedValue({ id: 'snapshot-1' });
     prisma.subject.findFirst.mockResolvedValue(createSubjectFixture());
 
     const result = await service.getSubjectAccess({
@@ -92,6 +124,12 @@ describe('AccessResolutionService integration', () => {
 
   it('builds a subject-focus graph payload from resolved access', async () => {
     const { service, prisma } = buildServiceMock();
+    prisma.account.upsert.mockResolvedValue({ id: 'account-default' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-default' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-default' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-default' });
+    prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
+    prisma.importSnapshot.findFirst.mockResolvedValue({ id: 'snapshot-1' });
     prisma.subject.findFirst.mockResolvedValue(createSubjectFixture());
 
     const result = (await service.getSubjectFocusGraph({
@@ -111,6 +149,12 @@ describe('AccessResolutionService integration', () => {
 
   it('returns subjects that can access a resource', async () => {
     const { service, prisma } = buildServiceMock();
+    prisma.account.upsert.mockResolvedValue({ id: 'account-default' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-default' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-default' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-default' });
+    prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
+    prisma.importSnapshot.findFirst.mockResolvedValue({ id: 'snapshot-1' });
     prisma.subject.findMany.mockResolvedValue([createSubjectFixture()]);
 
     const result = await service.getResourceAccess({

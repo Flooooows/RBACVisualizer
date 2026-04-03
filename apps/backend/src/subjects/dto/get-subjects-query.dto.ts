@@ -7,6 +7,11 @@ export class GetSubjectsQueryDto {
   importId!: string;
 
   @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  projectId?: string;
+
+  @IsOptional()
   @IsEnum(SubjectKind)
   type?: SubjectKind;
 

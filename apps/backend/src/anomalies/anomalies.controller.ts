@@ -12,6 +12,6 @@ export class AnomaliesController {
 
   @Get()
   getAnomalies(@Query() query: ImportIdQueryDto): Promise<unknown> {
-    return this.accessResolutionService.listAnomalies(query.importId);
+    return this.accessResolutionService.listAnomalies(query.importId, query.projectId);
   }
 }

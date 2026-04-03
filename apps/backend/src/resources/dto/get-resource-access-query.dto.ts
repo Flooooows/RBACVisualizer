@@ -8,6 +8,11 @@ export class GetResourceAccessQueryDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
   resource?: string;
 
   @IsOptional()

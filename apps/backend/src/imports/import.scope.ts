@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 export const DEFAULT_ACCOUNT_EMAIL = 'default@rbac-visualizer.local';
@@ -74,4 +75,29 @@ export async function ensureDefaultProjectScope(
   });
 
   return project.id;
+}
+
+export async function ensureImportSnapshotProjectScope(
+  prisma: PrismaLike,
+  snapshotId: string,
+  requestedProjectId?: string | null,
+): Promise<string> {
+  const projectId = await ensureDefaultProjectScope(prisma, requestedProjectId);
+  const snapshot = await prisma.importSnapshot.findFirst({
+    where: {
+      id: snapshotId,
+      projectId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!snapshot) {
+    throw new NotFoundException(
+      `Snapshot ${snapshotId} was not found in project scope ${projectId}.`,
+    );
+  }
+
+  return projectId;
 }

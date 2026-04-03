@@ -25,6 +25,7 @@ export class SubjectsController {
   ): Promise<unknown> {
     return this.accessResolutionService.getSubjectAccess({
       importId: query.importId,
+      projectId: query.projectId,
       subjectId: params.id,
     });
   }
@@ -36,6 +37,7 @@ export class SubjectsController {
   ): Promise<unknown> {
     return this.accessResolutionService.getSubjectAccess({
       importId: query.importId,
+      projectId: query.projectId,
       subjectId: params.id,
       namespace: query.namespace,
     });
@@ -48,6 +50,7 @@ export class SubjectsController {
   ): Promise<unknown> {
     return this.accessResolutionService.explainSubjectAccess({
       importId: query.importId,
+      projectId: query.projectId,
       subjectId: params.id,
       resource: query.resource ?? '*',
       verb: query.verb ?? '*',

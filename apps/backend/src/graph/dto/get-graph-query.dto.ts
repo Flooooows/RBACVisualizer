@@ -6,6 +6,11 @@ export class GetGraphQueryDto {
   @IsNotEmpty()
   importId!: string;
 
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  projectId?: string;
+
   @IsString()
   @IsNotEmpty()
   subjectId!: string;

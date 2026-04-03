@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, SubjectKind } from '@prisma/client';
+import { ensureImportSnapshotProjectScope } from '../imports/import.scope';
 import { PrismaService } from '../persistence/prisma.service';
 import type {
   PermissionSummaryNode,
@@ -95,14 +96,21 @@ export class AccessResolutionService {
 
   async listSubjects(params: {
     importId?: string;
+    projectId?: string;
     type?: SubjectKind;
     search?: string;
     namespace?: string;
   }): Promise<{ items: SubjectSummary[] }> {
     const importId = requireImportId(params.importId);
+    const projectId = await ensureImportSnapshotProjectScope(
+      this.prisma,
+      importId,
+      params.projectId,
+    );
     const subjects = await this.prisma.subject.findMany({
       where: {
         snapshotId: importId,
+        snapshot: { projectId },
         kind: params.type,
         namespace: params.namespace,
         name: params.search ? { contains: params.search, mode: 'insensitive' } : undefined,
@@ -122,12 +130,18 @@ export class AccessResolutionService {
 
   async getSubjectAccess(params: {
     importId?: string;
+    projectId?: string;
     subjectId: string;
     namespace?: string;
   }): Promise<SubjectAccessResponse> {
     const importId = requireImportId(params.importId);
+    const projectId = await ensureImportSnapshotProjectScope(
+      this.prisma,
+      importId,
+      params.projectId,
+    );
     const subject = await this.prisma.subject.findFirst({
-      where: { id: params.subjectId, snapshotId: importId },
+      where: { id: params.subjectId, snapshotId: importId, snapshot: { projectId } },
       include: subjectInclude,
     });
 
@@ -149,6 +163,7 @@ export class AccessResolutionService {
 
   async explainSubjectAccess(params: {
     importId?: string;
+    projectId?: string;
     subjectId: string;
     resource: string;
     verb: string;
@@ -160,6 +175,7 @@ export class AccessResolutionService {
   }> {
     const access = await this.getSubjectAccess({
       importId: params.importId,
+      projectId: params.projectId,
       subjectId: params.subjectId,
       namespace: params.namespace,
     });
@@ -180,13 +196,19 @@ export class AccessResolutionService {
 
   async getResourceAccess(params: {
     importId?: string;
+    projectId?: string;
     resource: string;
     verb: string;
     namespace?: string;
   }): Promise<{ items: ResourceAccessMatch[] }> {
     const importId = requireImportId(params.importId);
+    const projectId = await ensureImportSnapshotProjectScope(
+      this.prisma,
+      importId,
+      params.projectId,
+    );
     const subjects = await this.prisma.subject.findMany({
-      where: { snapshotId: importId },
+      where: { snapshotId: importId, snapshot: { projectId } },
       include: subjectInclude,
       orderBy: [{ kind: 'asc' }, { namespace: 'asc' }, { name: 'asc' }],
     });
@@ -216,6 +238,7 @@ export class AccessResolutionService {
 
   async getSubjectFocusGraph(params: {
     importId?: string;
+    projectId?: string;
     subjectId: string;
     namespace?: string;
     includePermissions?: boolean;
@@ -226,6 +249,7 @@ export class AccessResolutionService {
 
     const access = await this.getSubjectAccess({
       importId: params.importId,
+      projectId: params.projectId,
       subjectId: params.subjectId,
       namespace: params.namespace,
     });
@@ -363,10 +387,15 @@ export class AccessResolutionService {
     };
   }
 
-  async getDashboard(importId?: string): Promise<unknown> {
+  async getDashboard(importId?: string, projectId?: string): Promise<unknown> {
     const resolvedImportId = requireImportId(importId);
-    const snapshot = await this.prisma.importSnapshot.findUnique({
-      where: { id: resolvedImportId },
+    const scopedProjectId = await ensureImportSnapshotProjectScope(
+      this.prisma,
+      resolvedImportId,
+      projectId,
+    );
+    const snapshot = await this.prisma.importSnapshot.findFirst({
+      where: { id: resolvedImportId, projectId: scopedProjectId },
       include: {
         _count: {
           select: {
@@ -409,10 +438,15 @@ export class AccessResolutionService {
     };
   }
 
-  async listAnomalies(importId?: string): Promise<unknown> {
+  async listAnomalies(importId?: string, projectId?: string): Promise<unknown> {
     const resolvedImportId = requireImportId(importId);
+    const scopedProjectId = await ensureImportSnapshotProjectScope(
+      this.prisma,
+      resolvedImportId,
+      projectId,
+    );
     const findings = await this.prisma.analysisFinding.findMany({
-      where: { snapshotId: resolvedImportId },
+      where: { snapshotId: resolvedImportId, snapshot: { projectId: scopedProjectId } },
       orderBy: [{ severity: 'desc' }, { createdAt: 'asc' }],
       select: {
         id: true,

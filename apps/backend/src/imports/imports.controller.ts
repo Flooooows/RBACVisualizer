@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Headers, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Query } from '@nestjs/common';
 import { IdParamDto } from '../common/dto/id-param.dto';
+import { ProjectScopeQueryDto } from '../common/dto/project-scope-query.dto';
 import { ClusterStatusDto } from './dto/cluster-status.dto';
 import { CreateClusterImportDto } from './dto/create-cluster-import.dto';
 import { ImportsService } from './imports.service';
@@ -31,12 +32,15 @@ export class ImportsController {
   }
 
   @Get()
-  getImports(): Promise<unknown> {
-    return this.importsService.listImports();
+  getImports(@Query() query: ProjectScopeQueryDto): Promise<unknown> {
+    return this.importsService.listImports(query.projectId);
   }
 
   @Get(':id')
-  getImportById(@Param() params: IdParamDto): Promise<unknown> {
-    return this.importsService.getImportById(params.id);
+  getImportById(
+    @Param() params: IdParamDto,
+    @Query() query: ProjectScopeQueryDto,
+  ): Promise<unknown> {
+    return this.importsService.getImportById(params.id, query.projectId);
   }
 }

@@ -1,10 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class ImportIdQueryDto {
-  @IsString()
-  @IsNotEmpty()
-  importId!: string;
-
+export class ProjectScopeQueryDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()

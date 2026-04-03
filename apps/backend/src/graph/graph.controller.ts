@@ -14,6 +14,7 @@ export class GraphController {
   getGraph(@Query() query: GetGraphQueryDto): Promise<unknown> {
     return this.accessResolutionService.getSubjectFocusGraph({
       importId: query.importId,
+      projectId: query.projectId,
       subjectId: query.subjectId,
       namespace: query.namespace,
       includePermissions: query.includePermissions,

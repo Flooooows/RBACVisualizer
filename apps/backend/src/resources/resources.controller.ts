@@ -14,6 +14,7 @@ export class ResourcesController {
   getResourceAccess(@Query() query: GetResourceAccessQueryDto): Promise<unknown> {
     return this.accessResolutionService.getResourceAccess({
       importId: query.importId,
+      projectId: query.projectId,
       resource: query.resource ?? '*',
       verb: query.verb ?? '*',
       namespace: query.namespace,

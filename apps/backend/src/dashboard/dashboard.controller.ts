@@ -12,6 +12,6 @@ export class DashboardController {
 
   @Get()
   getDashboard(@Query() query: ImportIdQueryDto): Promise<unknown> {
-    return this.accessResolutionService.getDashboard(query.importId);
+    return this.accessResolutionService.getDashboard(query.importId, query.projectId);
   }
 }

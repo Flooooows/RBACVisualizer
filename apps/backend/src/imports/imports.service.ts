@@ -16,7 +16,7 @@ import { PrismaService } from '../persistence/prisma.service';
 import { ClusterRbacReaderService } from './cluster-rbac-reader.service';
 import { ClusterStatusDto } from './dto/cluster-status.dto';
 import { CreateClusterImportDto } from './dto/create-cluster-import.dto';
-import { ensureDefaultProjectScope } from './import.scope';
+import { ensureDefaultProjectScope, ensureImportSnapshotProjectScope } from './import.scope';
 import type {
   ImportIssue,
   PersistedImportResult,
@@ -762,8 +762,10 @@ export class ImportsService {
     }
   }
 
-  async listImports(): Promise<unknown> {
+  async listImports(projectId?: string): Promise<unknown> {
+    const scopedProjectId = await ensureDefaultProjectScope(this.prisma, projectId);
     const snapshots = await this.prisma.importSnapshot.findMany({
+      where: { projectId: scopedProjectId },
       orderBy: { importedAt: 'desc' },
       include: {
         _count: {
@@ -790,9 +792,10 @@ export class ImportsService {
     };
   }
 
-  async getImportById(id: string): Promise<unknown> {
-    const snapshot = await this.prisma.importSnapshot.findUnique({
-      where: { id },
+  async getImportById(id: string, projectId?: string): Promise<unknown> {
+    const scopedProjectId = await ensureImportSnapshotProjectScope(this.prisma, id, projectId);
+    const snapshot = await this.prisma.importSnapshot.findFirst({
+      where: { id, projectId: scopedProjectId },
       include: {
         rawManifests: {
           orderBy: { documentOrder: 'asc' },

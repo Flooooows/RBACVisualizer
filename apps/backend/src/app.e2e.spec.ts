@@ -254,7 +254,8 @@ describe('AppModule HTTP', () => {
       .get('/api/anomalies?importId=snapshot-1')
       .expect(200);
 
-    expect(accessResolutionService.getDashboard).toHaveBeenCalledWith('snapshot-1');
+    expect(accessResolutionService.getDashboard).toHaveBeenCalledWith('snapshot-1', undefined);
+    expect(accessResolutionService.listAnomalies).toHaveBeenCalledWith('snapshot-1', undefined);
     expect(dashboardResponse.body.snapshotId).toBe('snapshot-1');
     expect(anomaliesResponse.body.items[0].type).toBe('CLUSTER_ADMIN_USAGE');
   });
@@ -301,6 +302,27 @@ describe('AppModule HTTP', () => {
       .get('/api/subjects/subject-1/explain?importId=snapshot-1&resource=pods&verb=get')
       .expect(200);
 
+    expect(accessResolutionService.listSubjects).toHaveBeenCalledWith({
+      importId: 'snapshot-1',
+      projectId: undefined,
+      type: undefined,
+      search: undefined,
+      namespace: undefined,
+    });
+    expect(accessResolutionService.getSubjectAccess).toHaveBeenCalledWith({
+      importId: 'snapshot-1',
+      projectId: undefined,
+      subjectId: 'subject-1',
+      namespace: undefined,
+    });
+    expect(accessResolutionService.explainSubjectAccess).toHaveBeenCalledWith({
+      importId: 'snapshot-1',
+      projectId: undefined,
+      subjectId: 'subject-1',
+      resource: 'pods',
+      verb: 'get',
+      namespace: undefined,
+    });
     expect(subjectsResponse.body.items[0].name).toBe('admin');
     expect(accessResponse.body.permissions).toHaveLength(1);
     expect(explainResponse.body.allowed).toBe(true);
@@ -331,6 +353,20 @@ describe('AppModule HTTP', () => {
       .get('/api/graph?importId=snapshot-1&subjectId=subject-1')
       .expect(200);
 
+    expect(accessResolutionService.getResourceAccess).toHaveBeenCalledWith({
+      importId: 'snapshot-1',
+      projectId: undefined,
+      resource: 'pods',
+      verb: 'get',
+      namespace: undefined,
+    });
+    expect(accessResolutionService.getSubjectFocusGraph).toHaveBeenCalledWith({
+      importId: 'snapshot-1',
+      projectId: undefined,
+      subjectId: 'subject-1',
+      namespace: undefined,
+      includePermissions: undefined,
+    });
     expect(resourceResponse.body.items[0].subject.name).toBe('admin');
     expect(graphResponse.body.view).toBe('subject-focus');
     expect(graphResponse.body.meta.rootNodeIds).toEqual(['subject:user:admin']);
