@@ -3,6 +3,7 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   apiFetch,
+  type ClusterConnectionsResponse,
   type ClusterStatusResponse,
   type ImportDetailResponse,
   type ImportListItem,
@@ -136,9 +137,14 @@ export function ImportsClient(): JSX.Element {
   const [lastSubmission, setLastSubmission] = useState<CreateImportResponse | null>(null);
   const [clusterContextName, setClusterContextName] = useState('');
   const [clusterKubeconfigPath, setClusterKubeconfigPath] = useState('');
+  const [clusterConnectionName, setClusterConnectionName] = useState('kind-local');
   const [clusterStatusLoading, setClusterStatusLoading] = useState(false);
   const [clusterStatus, setClusterStatus] = useState<ClusterStatusResponse | null>(null);
   const [clusterError, setClusterError] = useState<string | null>(null);
+  const [clusterConnections, setClusterConnections] = useState<ClusterConnectionsResponse['items']>(
+    [],
+  );
+  const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
 
   const selectedImport = useMemo(
     () => imports.find((item) => item.id === selectedImportId) ?? imports[0] ?? null,
@@ -161,12 +167,22 @@ export function ImportsClient(): JSX.Element {
         if (!projectScope.projectId) {
           setImports([]);
           setDetail(null);
+          setClusterConnections([]);
           return;
         }
         const list = await apiFetch<ImportListResponse>(
           `/imports?projectId=${projectScope.projectId}`,
         );
+        const connections = await apiFetch<ClusterConnectionsResponse>(
+          `/cluster-connections?projectId=${projectScope.projectId}`,
+        );
         setImports(list.items);
+        setClusterConnections(connections.items);
+        setSelectedConnectionId((current) =>
+          connections.items.some((connection) => connection.id === current)
+            ? current
+            : (connections.items[0]?.id ?? null),
+        );
         const nextImportId = preferredImportId ?? list.items[0]?.id ?? null;
         setSelectedImportId(nextImportId);
 
@@ -255,17 +271,50 @@ export function ImportsClient(): JSX.Element {
     }
   }
 
-  async function checkClusterStatus(): Promise<void> {
+  async function createClusterConnection(): Promise<void> {
     try {
-      setClusterStatusLoading(true);
-      const status = await apiFetch<ClusterStatusResponse>('/imports/cluster/status', {
+      setSubmitting(true);
+      await apiFetch('/cluster-connections', {
         method: 'POST',
         body: JSON.stringify({
           projectId: projectScope.projectId,
+          name: clusterConnectionName,
           kubeconfigPath: clusterKubeconfigPath || undefined,
           contextName: clusterContextName || undefined,
         }),
       });
+      await loadImports();
+      setClusterError(null);
+    } catch (nextError) {
+      setClusterError(
+        nextError instanceof Error ? nextError.message : 'Failed to save cluster connection.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function checkClusterStatus(): Promise<void> {
+    try {
+      setClusterStatusLoading(true);
+      const status = selectedConnectionId
+        ? await apiFetch<ClusterStatusResponse>(
+            `/cluster-connections/${selectedConnectionId}/check`,
+            {
+              method: 'POST',
+              body: JSON.stringify({
+                projectId: projectScope.projectId,
+              }),
+            },
+          )
+        : await apiFetch<ClusterStatusResponse>('/imports/cluster/status', {
+            method: 'POST',
+            body: JSON.stringify({
+              projectId: projectScope.projectId,
+              kubeconfigPath: clusterKubeconfigPath || undefined,
+              contextName: clusterContextName || undefined,
+            }),
+          });
 
       setClusterStatus(status);
       setClusterError(null);
@@ -497,6 +546,17 @@ export function ImportsClient(): JSX.Element {
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-brand-100">
+                Saved connection name
+              </label>
+              <input
+                value={clusterConnectionName}
+                onChange={(event) => setClusterConnectionName(event.target.value)}
+                placeholder="kind-local"
+                className="app-input"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-brand-100">
                 Context name (optional)
               </label>
               <input
@@ -518,7 +578,32 @@ export function ImportsClient(): JSX.Element {
               />
             </div>
           </div>
+          <div className="mt-4">
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-brand-100">
+              Saved connections
+            </label>
+            <select
+              value={selectedConnectionId ?? ''}
+              onChange={(event) => setSelectedConnectionId(event.target.value || null)}
+              className="app-select"
+            >
+              <option value="">Use manual kubeconfig/context values</option>
+              {clusterConnections.map((connection) => (
+                <option key={connection.id} value={connection.id}>
+                  {connection.name} · {connection.contextName ?? 'no-context'} · {connection.status}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => void createClusterConnection()}
+              disabled={submitting || clusterConnectionName.trim().length === 0}
+              className="app-button-secondary border border-brand-700/40 bg-brand-500/10 text-brand-100 hover:bg-brand-500/15"
+            >
+              Save cluster connection
+            </button>
             <button
               type="button"
               onClick={() => void checkClusterStatus()}
@@ -529,7 +614,35 @@ export function ImportsClient(): JSX.Element {
             </button>
             <button
               type="button"
-              onClick={() => void submitClusterImport()}
+              onClick={() =>
+                void (selectedConnectionId
+                  ? apiFetch<CreateImportResponse>(
+                      `/cluster-connections/${selectedConnectionId}/import`,
+                      {
+                        method: 'POST',
+                        body: JSON.stringify({
+                          projectId: projectScope.projectId,
+                          sourceLabel,
+                        }),
+                      },
+                    )
+                      .then(async (created) => {
+                        setLastSubmission(created);
+                        await loadImports(created.importId);
+                        setError(null);
+                        setClusterError(null);
+                      })
+                      .catch((nextError) => {
+                        setLastSubmission(null);
+                        setError(
+                          nextError instanceof Error
+                            ? nextError.message
+                            : 'Failed to import from saved cluster connection.',
+                        );
+                      })
+                      .finally(() => setSubmitting(false))
+                  : submitClusterImport())
+              }
               disabled={submitting || sourceLabel.trim().length === 0}
               className="app-button-secondary border border-emerald-700/40 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15"
             >

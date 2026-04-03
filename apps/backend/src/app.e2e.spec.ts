@@ -4,6 +4,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './app.module';
 import { GlobalHttpExceptionFilter } from './common/http-exception.filter';
+import { ClusterConnectionsService } from './cluster-connections/cluster-connections.service';
 import { requestIdMiddleware } from './common/request-id.middleware';
 import { ImportsService } from './imports/imports.service';
 import { AccessResolutionService } from './access-resolution/access-resolution.service';
@@ -31,6 +32,13 @@ describe('AppModule HTTP', () => {
     listAnomalies: jest.fn(),
   };
 
+  const clusterConnectionsService = {
+    list: jest.fn(),
+    create: jest.fn(),
+    check: jest.fn(),
+    import: jest.fn(),
+  };
+
   const prismaService = {
     $connect: jest.fn(),
     $disconnect: jest.fn(),
@@ -49,6 +57,8 @@ describe('AppModule HTTP', () => {
       .useValue(importsService)
       .overrideProvider(AccessResolutionService)
       .useValue(accessResolutionService)
+      .overrideProvider(ClusterConnectionsService)
+      .useValue(clusterConnectionsService)
       .overrideProvider(PrismaService)
       .useValue(prismaService)
       .compile();
@@ -261,6 +271,73 @@ describe('AppModule HTTP', () => {
       name: 'Default Project',
       workspaceName: 'Default Workspace',
     });
+  });
+
+  it('manages cluster connections over HTTP', async () => {
+    clusterConnectionsService.list.mockResolvedValue({
+      items: [
+        {
+          id: 'connection-1',
+          name: 'kind-local',
+          provider: 'KUBERNETES',
+          apiServerHost: 'https://127.0.0.1:6443',
+          kubeconfigPath: '~/.kube/config',
+          contextName: 'kind-rbac-visualizer',
+          status: 'ACTIVE',
+          lastValidatedAt: null,
+          projectId: 'project-default',
+        },
+      ],
+    });
+    clusterConnectionsService.create.mockResolvedValue({
+      id: 'connection-1',
+      name: 'kind-local',
+      projectId: 'project-default',
+    });
+    clusterConnectionsService.check.mockResolvedValue({
+      connectionId: 'connection-1',
+      reachable: true,
+      contextName: 'kind-rbac-visualizer',
+      clusterServer: 'https://127.0.0.1:6443',
+      counts: {
+        namespaces: 4,
+        serviceAccounts: 12,
+        roles: 3,
+        clusterRoles: 48,
+        roleBindings: 2,
+        clusterRoleBindings: 6,
+      },
+    });
+    clusterConnectionsService.import.mockResolvedValue({
+      importId: 'snapshot-from-connection',
+      status: 'COMPLETED',
+    });
+
+    const listResponse = await request(app.getHttpServer())
+      .get('/api/cluster-connections?projectId=project-default')
+      .expect(200);
+    const createResponse = await request(app.getHttpServer())
+      .post('/api/cluster-connections')
+      .send({
+        projectId: 'project-default',
+        name: 'kind-local',
+        kubeconfigPath: '~/.kube/config',
+        contextName: 'kind-rbac-visualizer',
+      })
+      .expect(201);
+    const checkResponse = await request(app.getHttpServer())
+      .post('/api/cluster-connections/connection-1/check')
+      .send({ projectId: 'project-default' })
+      .expect(201);
+    const importResponse = await request(app.getHttpServer())
+      .post('/api/cluster-connections/connection-1/import')
+      .send({ projectId: 'project-default' })
+      .expect(201);
+
+    expect(listResponse.body.items[0].name).toBe('kind-local');
+    expect(createResponse.body.id).toBe('connection-1');
+    expect(checkResponse.body.reachable).toBe(true);
+    expect(importResponse.body.importId).toBe('snapshot-from-connection');
   });
 
   it('serves dashboard and anomaly endpoints', async () => {

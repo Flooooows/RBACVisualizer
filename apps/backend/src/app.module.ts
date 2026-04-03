@@ -9,6 +9,7 @@ import { AnomaliesModule } from './anomalies/anomalies.module';
 import { PersistenceModule } from './persistence/persistence.module';
 import { AccessResolutionModule } from './access-resolution/access-resolution.module';
 import { ProjectsModule } from './projects/projects.module';
+import { ClusterConnectionsModule } from './cluster-connections/cluster-connections.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ProjectsModule } from './projects/projects.module';
     PersistenceModule,
     AccessResolutionModule,
     ProjectsModule,
+    ClusterConnectionsModule,
   ],
   controllers: [HealthController],
 })

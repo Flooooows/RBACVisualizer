@@ -88,6 +88,7 @@ C’est la porte d’entrée de l’application. On y charge les manifests RBAC 
 - charger un exemple avec anomalies avec **Load anomaly sample**
 - charger un fichier local YAML/JSON avec **Load file**
 - lancer un import direct depuis un cluster avec **Import current cluster**
+- enregistrer une connexion cluster réutilisable dans le projet courant
 - modifier le contenu dans la zone texte
 - donner un `sourceLabel`
 - créer un snapshot avec **Create import snapshot**
@@ -100,6 +101,7 @@ C’est la porte d’entrée de l’application. On y charge les manifests RBAC 
 - le détail d’un snapshot sélectionné
 - les warnings retournés par le backend
 - le projet courant utilisé pour l’import et la lecture des snapshots
+- les connexions cluster sauvegardées dans le projet courant
 
 ### Quand l’utiliser
 
@@ -130,6 +132,24 @@ Le backend lit alors en mode read-only :
 - les clusterrolebindings
 
 Puis il envoie ces objets dans le même pipeline que les imports YAML/JSON.
+
+### Connexions cluster sauvegardées
+
+Le bloc d’import cluster permet maintenant aussi de créer une **connexion cluster sauvegardée** dans le projet courant.
+
+Cette connexion stocke pour l’instant :
+
+- un nom lisible
+- un chemin de kubeconfig
+- un contexte Kubernetes
+
+Ensuite tu peux :
+
+- sélectionner la connexion sauvegardée
+- tester sa connectivité
+- lancer un import depuis cette connexion sans tout retaper
+
+Cela prépare le futur mode SaaS cluster-aware, où un projet possède ses propres connexions cluster.
 
 ### Test local recommandé avec kind + Podman
 

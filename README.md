@@ -222,6 +222,8 @@ The anomaly cards can also link back into subject access and graph views when th
 
 The application can now read RBAC resources directly from a Kubernetes cluster in read-only mode.
 
+The SaaS phase 1 implementation now also supports **saved cluster connections per project**.
+
 Current cluster import scope:
 
 - `Namespace`
@@ -237,12 +239,18 @@ How to use it:
 2. Open `http://localhost:3000/imports`.
 3. Confirm the project selector is set to the project you want to analyze.
 4. Use the **Direct cluster import** block.
-5. Optionally provide:
+5. Optionally create a saved cluster connection by providing:
+   - a connection name
    - a kubeconfig path (for example `~/.kube/config`)
    - a context name
-6. Click **Import current cluster**.
+6. Click **Save cluster connection** if you want to reuse it later.
+7. Optionally select a saved connection from the dropdown.
+8. Click **Check cluster status**.
+9. Click **Import current cluster**.
 
 The backend will fetch RBAC objects from the cluster and push them through the same normalization and anomaly pipeline as YAML imports.
+
+Saved cluster connections are currently scoped by `projectId`.
 
 ## Local cluster testing with kind + Podman
 
@@ -310,6 +318,13 @@ npm run dev
 ```
 
 After that, go to `/imports` and run **Import current cluster**.
+
+Recommended SaaS-oriented flow:
+
+1. Pick the right project in the selector
+2. Save a cluster connection for that project
+3. Reuse that saved connection for status checks and imports
+4. Review findings and graph in the same project scope
 
 You should then be able to inspect:
 

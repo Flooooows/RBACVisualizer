@@ -85,10 +85,13 @@ Then in `/imports`:
 
 1. Confirm the project selector is set to the expected project
 2. Optionally set context `kind-rbac-visualizer`
-3. Click `Check cluster status`
-4. Click `Import current cluster`
+3. Optionally save the cluster connection in that project
+4. Click `Check cluster status`
+5. Click `Import current cluster`
 
 Verify that findings, graph, subject access, and resource access views all populate correctly.
+
+You can also verify that the saved cluster connection appears again when you reload the Imports page for the same project.
 
 ## 6. Shutdown
 

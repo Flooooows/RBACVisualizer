@@ -68,6 +68,20 @@ export type ProjectsResponse = {
   }>;
 };
 
+export type ClusterConnectionsResponse = {
+  items: Array<{
+    id: string;
+    name: string;
+    provider: string;
+    apiServerHost: string | null;
+    kubeconfigPath: string | null;
+    contextName: string | null;
+    status: string;
+    lastValidatedAt: string | null;
+    projectId: string;
+  }>;
+};
+
 export type SubjectListResponse = {
   items: Array<{
     id: string;

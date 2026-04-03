@@ -104,6 +104,7 @@ Agents MUST NOT invent RBAC concepts outside Kubernetes spec.
   - Simple dashboard
   - Local Docker run
   - Local cluster testing with kind + Podman
+  - Project-scoped saved cluster connections (phase 1 SaaS)
 
 ## Excluded (MVP)
 
