@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, type DashboardResponse, type ImportListResponse } from '../lib/api';
 import { AsyncState } from './async-state';
+import { ProjectSelector } from './project-selector';
 import { StatCard } from './stat-card';
 import { StatusChip } from './status-chip';
+import { useProjectScope } from '../hooks/use-project-scope';
 
 export function DashboardClient(): JSX.Element {
+  const projectScope = useProjectScope();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
@@ -17,7 +20,13 @@ export function DashboardClient(): JSX.Element {
     async function load(): Promise<void> {
       try {
         setLoading(true);
-        const imports = await apiFetch<ImportListResponse>('/imports');
+        if (!projectScope.projectId) {
+          setDashboard(null);
+          return;
+        }
+        const imports = await apiFetch<ImportListResponse>(
+          `/imports?projectId=${projectScope.projectId}`,
+        );
         const latest = imports.items[0];
 
         if (!latest) {
@@ -28,7 +37,9 @@ export function DashboardClient(): JSX.Element {
           return;
         }
 
-        const nextDashboard = await apiFetch<DashboardResponse>(`/dashboard?importId=${latest.id}`);
+        const nextDashboard = await apiFetch<DashboardResponse>(
+          `/dashboard?importId=${latest.id}&projectId=${projectScope.projectId}`,
+        );
         if (active) {
           setDashboard(nextDashboard);
           setError(null);
@@ -51,14 +62,14 @@ export function DashboardClient(): JSX.Element {
     return () => {
       active = false;
     };
-  }, []);
+  }, [projectScope.projectId]);
 
-  if (loading || error || !dashboard) {
+  if (projectScope.loading || loading || error || projectScope.error || !dashboard) {
     return (
       <AsyncState
-        loading={loading}
-        error={error}
-        empty={!dashboard && !loading && !error}
+        loading={loading || projectScope.loading}
+        error={error ?? projectScope.error}
+        empty={!dashboard && !loading && !error && !projectScope.loading && !projectScope.error}
         emptyMessage="No import snapshot yet. Use the Imports page to submit YAML or JSON manifests."
       />
     );
@@ -91,6 +102,9 @@ export function DashboardClient(): JSX.Element {
             <StatusChip tone={dashboard.snapshotStatus.includes('WARNING') ? 'warning' : 'success'}>
               {dashboard.snapshotStatus}
             </StatusChip>
+          </div>
+          <div className="mt-4">
+            <ProjectSelector {...projectScope} onChange={projectScope.setProjectId} />
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="app-panel-muted p-4">

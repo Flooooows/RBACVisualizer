@@ -1,5 +1,6 @@
 export type ImportListItem = {
   id: string;
+  projectId: string | null;
   status: string;
   sourceType: string;
   sourceLabel: string | null;
@@ -15,6 +16,7 @@ export type ImportListResponse = {
 
 export type ImportDetailResponse = {
   id: string;
+  projectId: string | null;
   status: string;
   sourceType: string;
   sourceLabel: string | null;
@@ -53,6 +55,17 @@ export type DashboardResponse = {
   importedAt: string;
   completedAt: string | null;
   cards: Array<{ id: string; label: string; value: number }>;
+};
+
+export type ProjectsResponse = {
+  items: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    workspaceId: string;
+    workspaceName: string;
+    isArchived: boolean;
+  }>;
 };
 
 export type SubjectListResponse = {

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { PageCard } from '../../components/page-card';
 import { AnomaliesClient } from '../../components/anomalies-client';
 import { StatusChip } from '../../components/status-chip';
@@ -10,7 +11,9 @@ export default function AnomaliesPage(): JSX.Element {
       description="Filter high-value RBAC findings, inspect their details, and pivot directly into graph or subject views when the anomaly includes context."
       aside={<StatusChip tone="warning">Heuristic analysis</StatusChip>}
     >
-      <AnomaliesClient />
+      <Suspense fallback={<p className="text-sm text-slate-400">Loading findings…</p>}>
+        <AnomaliesClient />
+      </Suspense>
     </PageCard>
   );
 }

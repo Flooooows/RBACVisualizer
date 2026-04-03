@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch, type ImportListResponse, type ResourceAccessResponse } from '../lib/api';
 import { AsyncState } from './async-state';
+import { ProjectSelector } from './project-selector';
+import { useProjectScope } from '../hooks/use-project-scope';
 
 export function ResourcesClient(): JSX.Element {
+  const projectScope = useProjectScope();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resource, setResource] = useState('pods');
@@ -29,7 +32,14 @@ export function ResourcesClient(): JSX.Element {
     async function load(): Promise<void> {
       try {
         setLoading(true);
-        const imports = await apiFetch<ImportListResponse>('/imports');
+        if (!projectScope.projectId) {
+          setItems([]);
+          setImportId(null);
+          return;
+        }
+        const imports = await apiFetch<ImportListResponse>(
+          `/imports?projectId=${projectScope.projectId}`,
+        );
         const latest = imports.items[0];
 
         if (!latest) {
@@ -42,6 +52,7 @@ export function ResourcesClient(): JSX.Element {
 
         const searchParams = new URLSearchParams({
           importId: latest.id,
+          projectId: projectScope.projectId,
           resource,
           verb,
         });
@@ -75,10 +86,11 @@ export function ResourcesClient(): JSX.Element {
     return () => {
       active = false;
     };
-  }, [namespace, resource, verb]);
+  }, [namespace, projectScope.projectId, resource, verb]);
 
   return (
     <div className="space-y-4">
+      <ProjectSelector {...projectScope} onChange={projectScope.setProjectId} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="app-panel p-5">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">

@@ -8,6 +8,7 @@ import { ResourcesModule } from './resources/resources.module';
 import { AnomaliesModule } from './anomalies/anomalies.module';
 import { PersistenceModule } from './persistence/persistence.module';
 import { AccessResolutionModule } from './access-resolution/access-resolution.module';
+import { ProjectsModule } from './projects/projects.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AccessResolutionModule } from './access-resolution/access-resolution.mo
     AnomaliesModule,
     PersistenceModule,
     AccessResolutionModule,
+    ProjectsModule,
   ],
   controllers: [HealthController],
 })

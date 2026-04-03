@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch, type AnomaliesResponse, type ImportListResponse } from '../lib/api';
 import { AsyncState } from './async-state';
+import { ProjectSelector } from './project-selector';
+import { useProjectScope } from '../hooks/use-project-scope';
 
 function severityClasses(severity: string): string {
   if (severity === 'CRITICAL') {
@@ -43,6 +45,7 @@ function severityWeight(severity: string): number {
 }
 
 export function AnomaliesClient(): JSX.Element {
+  const projectScope = useProjectScope();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<AnomaliesResponse['items']>([]);
@@ -106,7 +109,13 @@ export function AnomaliesClient(): JSX.Element {
 
     async function load(): Promise<void> {
       try {
-        const imports = await apiFetch<ImportListResponse>('/imports');
+        if (!projectScope.projectId) {
+          setItems([]);
+          return;
+        }
+        const imports = await apiFetch<ImportListResponse>(
+          `/imports?projectId=${projectScope.projectId}`,
+        );
         const latest = imports.items[0];
 
         if (!latest) {
@@ -116,7 +125,9 @@ export function AnomaliesClient(): JSX.Element {
           return;
         }
 
-        const anomalies = await apiFetch<AnomaliesResponse>(`/anomalies?importId=${latest.id}`);
+        const anomalies = await apiFetch<AnomaliesResponse>(
+          `/anomalies?importId=${latest.id}&projectId=${projectScope.projectId}`,
+        );
         if (active) {
           setImportId(latest.id);
           setItems(anomalies.items);
@@ -138,7 +149,7 @@ export function AnomaliesClient(): JSX.Element {
     return () => {
       active = false;
     };
-  }, []);
+  }, [projectScope.projectId]);
 
   if (loading || error || items.length === 0) {
     return (
@@ -153,6 +164,7 @@ export function AnomaliesClient(): JSX.Element {
 
   return (
     <div className="space-y-4">
+      <ProjectSelector {...projectScope} onChange={projectScope.setProjectId} />
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="app-panel p-6 lg:col-span-8">
           <div className="flex items-center justify-between">
@@ -334,16 +346,16 @@ export function AnomaliesClient(): JSX.Element {
                       <p className="mt-3 text-xs text-slate-500">
                         {new Date(item.createdAt).toLocaleString()}
                       </p>
-                      {importId && firstSubjectId ? (
+                      {importId && projectScope.projectId && firstSubjectId ? (
                         <div className="mt-4 flex flex-wrap gap-2">
                           <Link
-                            href={`/subjects?importId=${encodeURIComponent(importId)}&subjectId=${encodeURIComponent(firstSubjectId)}`}
+                            href={`/subjects?importId=${encodeURIComponent(importId)}&projectId=${encodeURIComponent(projectScope.projectId)}&subjectId=${encodeURIComponent(firstSubjectId)}`}
                             className="rounded-lg bg-[#2d3449] px-4 py-2 text-xs font-semibold text-slate-100 transition hover:bg-[#31394d]"
                           >
                             Open subject access
                           </Link>
                           <Link
-                            href={`/graph?importId=${encodeURIComponent(importId)}&subjectId=${encodeURIComponent(firstSubjectId)}`}
+                            href={`/graph?importId=${encodeURIComponent(importId)}&projectId=${encodeURIComponent(projectScope.projectId)}&subjectId=${encodeURIComponent(firstSubjectId)}`}
                             className="rounded-lg bg-[#adc6ff] px-4 py-2 text-xs font-bold text-[#002e6a] transition hover:brightness-110"
                           >
                             Open subject graph

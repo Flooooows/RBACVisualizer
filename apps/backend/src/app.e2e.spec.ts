@@ -34,6 +34,11 @@ describe('AppModule HTTP', () => {
   const prismaService = {
     $connect: jest.fn(),
     $disconnect: jest.fn(),
+    account: { upsert: jest.fn() },
+    workspace: { upsert: jest.fn() },
+    workspaceMembership: { upsert: jest.fn() },
+    project: { upsert: jest.fn(), findMany: jest.fn() },
+    importSnapshot: { updateMany: jest.fn() },
   };
 
   beforeAll(async () => {
@@ -228,6 +233,34 @@ describe('AppModule HTTP', () => {
 
     expect(listResponse.body.items).toHaveLength(1);
     expect(detailResponse.body.id).toBe('snapshot-1');
+  });
+
+  it('lists projects over HTTP', async () => {
+    prismaService.account.upsert.mockResolvedValue({ id: 'account-default' });
+    prismaService.workspace.upsert.mockResolvedValue({
+      id: 'workspace-default',
+      name: 'Default Workspace',
+    });
+    prismaService.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-default' });
+    prismaService.project.upsert.mockResolvedValue({ id: 'project-default' });
+    prismaService.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
+    prismaService.project.findMany.mockResolvedValue([
+      {
+        id: 'project-default',
+        name: 'Default Project',
+        slug: 'default-project',
+        isArchived: false,
+        workspace: { id: 'workspace-default', name: 'Default Workspace' },
+      },
+    ]);
+
+    const response = await request(app.getHttpServer()).get('/api/projects').expect(200);
+
+    expect(response.body.items[0]).toMatchObject({
+      id: 'project-default',
+      name: 'Default Project',
+      workspaceName: 'Default Workspace',
+    });
   });
 
   it('serves dashboard and anomaly endpoints', async () => {

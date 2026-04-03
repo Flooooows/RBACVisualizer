@@ -10,9 +10,12 @@ import {
 } from '../lib/api';
 import { AsyncState } from './async-state';
 import { GraphPreview } from './graph-preview';
+import { ProjectSelector } from './project-selector';
+import { useProjectScope } from '../hooks/use-project-scope';
 
 export function GraphClient(): JSX.Element {
   const queryParams = useSearchParams();
+  const projectScope = useProjectScope();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [importId, setImportId] = useState<string | null>(null);
@@ -27,7 +30,14 @@ export function GraphClient(): JSX.Element {
 
     async function loadBootstrap(): Promise<void> {
       try {
-        const imports = await apiFetch<ImportListResponse>('/imports');
+        if (!projectScope.projectId) {
+          setImportId(null);
+          setSubjects([]);
+          return;
+        }
+        const imports = await apiFetch<ImportListResponse>(
+          `/imports?projectId=${projectScope.projectId}`,
+        );
         const requestedImportId = queryParams.get('importId');
         const latest =
           imports.items.find((item) => item.id === requestedImportId) ?? imports.items[0];
@@ -40,7 +50,9 @@ export function GraphClient(): JSX.Element {
           return;
         }
 
-        const nextSubjects = await apiFetch<SubjectListResponse>(`/subjects?importId=${latest.id}`);
+        const nextSubjects = await apiFetch<SubjectListResponse>(
+          `/subjects?importId=${latest.id}&projectId=${projectScope.projectId}`,
+        );
 
         if (active) {
           setImportId(latest.id);
@@ -71,7 +83,7 @@ export function GraphClient(): JSX.Element {
     return () => {
       active = false;
     };
-  }, [queryParams]);
+  }, [projectScope.projectId, queryParams]);
 
   useEffect(() => {
     if (!importId || !subjectId) {
@@ -82,7 +94,9 @@ export function GraphClient(): JSX.Element {
     let active = true;
     setLoading(true);
 
-    void apiFetch<GraphPayload>(`/graph?importId=${importId}&subjectId=${subjectId}`)
+    void apiFetch<GraphPayload>(
+      `/graph?importId=${importId}&projectId=${projectScope.projectId}&subjectId=${subjectId}`,
+    )
       .then((nextGraph) => {
         if (active) {
           setGraph(nextGraph);
@@ -104,7 +118,7 @@ export function GraphClient(): JSX.Element {
     return () => {
       active = false;
     };
-  }, [importId, subjectId]);
+  }, [importId, projectScope.projectId, subjectId]);
 
   const selectedSubject = useMemo(
     () => subjects.find((subject) => subject.id === subjectId) ?? null,
@@ -171,6 +185,7 @@ export function GraphClient(): JSX.Element {
 
   return (
     <div className="space-y-4">
+      <ProjectSelector {...projectScope} onChange={projectScope.setProjectId} />
       <div className="app-panel space-y-4 p-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-[280px] flex-1 flex-wrap items-center gap-3">

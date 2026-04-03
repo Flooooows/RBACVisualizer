@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   apiFetch,
   type ClusterStatusResponse,
@@ -9,6 +9,8 @@ import {
   type ImportListResponse,
 } from '../lib/api';
 import { AsyncState } from './async-state';
+import { ProjectSelector } from './project-selector';
+import { useProjectScope } from '../hooks/use-project-scope';
 
 const sampleManifest = `apiVersion: v1
 kind: ServiceAccount
@@ -121,6 +123,7 @@ function formatLabel(value: string): string {
 }
 
 export function ImportsClient(): JSX.Element {
+  const projectScope = useProjectScope();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,38 +154,52 @@ export function ImportsClient(): JSX.Element {
     [imports],
   );
 
-  async function loadImports(preferredImportId?: string): Promise<void> {
-    setLoading(true);
-    try {
-      const list = await apiFetch<ImportListResponse>('/imports');
-      setImports(list.items);
-      const nextImportId = preferredImportId ?? list.items[0]?.id ?? null;
-      setSelectedImportId(nextImportId);
+  const loadImports = useCallback(
+    async (preferredImportId?: string): Promise<void> => {
+      setLoading(true);
+      try {
+        if (!projectScope.projectId) {
+          setImports([]);
+          setDetail(null);
+          return;
+        }
+        const list = await apiFetch<ImportListResponse>(
+          `/imports?projectId=${projectScope.projectId}`,
+        );
+        setImports(list.items);
+        const nextImportId = preferredImportId ?? list.items[0]?.id ?? null;
+        setSelectedImportId(nextImportId);
 
-      if (nextImportId) {
-        const nextDetail = await apiFetch<ImportDetailResponse>(`/imports/${nextImportId}`);
-        setDetail(nextDetail);
-      } else {
-        setDetail(null);
+        if (nextImportId) {
+          const nextDetail = await apiFetch<ImportDetailResponse>(
+            `/imports/${nextImportId}?projectId=${projectScope.projectId}`,
+          );
+          setDetail(nextDetail);
+        } else {
+          setDetail(null);
+        }
+        setError(null);
+      } catch (nextError) {
+        setError(nextError instanceof Error ? nextError.message : 'Failed to load imports.');
+      } finally {
+        setLoading(false);
       }
-      setError(null);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Failed to load imports.');
-    } finally {
-      setLoading(false);
-    }
-  }
+    },
+    [projectScope.projectId],
+  );
 
   useEffect(() => {
     void loadImports();
-  }, []);
+  }, [loadImports]);
 
   useEffect(() => {
     if (!selectedImport || selectedImport.id === detail?.id) {
       return;
     }
 
-    void apiFetch<ImportDetailResponse>(`/imports/${selectedImport.id}`)
+    void apiFetch<ImportDetailResponse>(
+      `/imports/${selectedImport.id}?projectId=${projectScope.projectId}`,
+    )
       .then((nextDetail) => {
         setDetail(nextDetail);
         setError(null);
@@ -190,7 +207,7 @@ export function ImportsClient(): JSX.Element {
       .catch((nextError) => {
         setError(nextError instanceof Error ? nextError.message : 'Failed to load import detail.');
       });
-  }, [detail?.id, selectedImport]);
+  }, [detail?.id, projectScope.projectId, selectedImport]);
 
   async function submitImport(): Promise<void> {
     try {
@@ -198,6 +215,7 @@ export function ImportsClient(): JSX.Element {
       const created = await apiFetch<CreateImportResponse>('/imports', {
         method: 'POST',
         body: JSON.stringify({
+          projectId: projectScope.projectId,
           sourceType: 'YAML',
           sourceLabel,
           raw: payload,
@@ -219,6 +237,7 @@ export function ImportsClient(): JSX.Element {
       const created = await apiFetch<CreateImportResponse>('/imports/cluster', {
         method: 'POST',
         body: JSON.stringify({
+          projectId: projectScope.projectId,
           sourceLabel,
           kubeconfigPath: clusterKubeconfigPath || undefined,
           contextName: clusterContextName || undefined,
@@ -242,6 +261,7 @@ export function ImportsClient(): JSX.Element {
       const status = await apiFetch<ClusterStatusResponse>('/imports/cluster/status', {
         method: 'POST',
         body: JSON.stringify({
+          projectId: projectScope.projectId,
           kubeconfigPath: clusterKubeconfigPath || undefined,
           contextName: clusterContextName || undefined,
         }),
@@ -283,6 +303,7 @@ export function ImportsClient(): JSX.Element {
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-12 space-y-6 lg:col-span-8">
+        <ProjectSelector {...projectScope} onChange={projectScope.setProjectId} />
         <div className="app-panel-muted relative overflow-hidden p-10 text-center">
           <div className="absolute inset-0 bg-gradient-to-b from-brand-500/10 to-transparent opacity-80" />
           <div className="relative mx-auto flex max-w-2xl flex-col items-center">

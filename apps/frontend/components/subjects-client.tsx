@@ -10,9 +10,12 @@ import {
   type SubjectListResponse,
 } from '../lib/api';
 import { AsyncState } from './async-state';
+import { ProjectSelector } from './project-selector';
+import { useProjectScope } from '../hooks/use-project-scope';
 
 export function SubjectsClient(): JSX.Element {
   const queryParams = useSearchParams();
+  const projectScope = useProjectScope();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [importId, setImportId] = useState<string | null>(null);
@@ -29,7 +32,15 @@ export function SubjectsClient(): JSX.Element {
 
     async function loadBootstrap(): Promise<void> {
       try {
-        const imports = await apiFetch<ImportListResponse>('/imports');
+        if (!projectScope.projectId) {
+          setImportId(null);
+          setSubjects([]);
+          setSubjectId(null);
+          return;
+        }
+        const imports = await apiFetch<ImportListResponse>(
+          `/imports?projectId=${projectScope.projectId}`,
+        );
         const requestedImportId = queryParams.get('importId');
         const latest =
           imports.items.find((item) => item.id === requestedImportId) ?? imports.items[0];
@@ -43,7 +54,10 @@ export function SubjectsClient(): JSX.Element {
           return;
         }
 
-        const requestParams = new URLSearchParams({ importId: latest.id });
+        const requestParams = new URLSearchParams({
+          importId: latest.id,
+          projectId: projectScope.projectId,
+        });
         if (typeFilter !== 'ALL') {
           requestParams.set('type', typeFilter);
         }
@@ -84,7 +98,7 @@ export function SubjectsClient(): JSX.Element {
     return () => {
       active = false;
     };
-  }, [namespaceFilter, queryParams, searchTerm, typeFilter]);
+  }, [namespaceFilter, projectScope.projectId, queryParams, searchTerm, typeFilter]);
 
   useEffect(() => {
     if (!importId || !subjectId) {
@@ -99,10 +113,10 @@ export function SubjectsClient(): JSX.Element {
     async function loadAccess(): Promise<void> {
       try {
         const nextAccess = await apiFetch<SubjectAccessResponse>(
-          `/subjects/${subjectId}/access?importId=${importId}`,
+          `/subjects/${subjectId}/access?importId=${importId}&projectId=${projectScope.projectId}`,
         );
         const nextExplain = await apiFetch<ExplainAccessResponse>(
-          `/subjects/${subjectId}/explain?importId=${importId}&resource=pods&verb=get`,
+          `/subjects/${subjectId}/explain?importId=${importId}&projectId=${projectScope.projectId}&resource=pods&verb=get`,
         );
         if (active) {
           setAccess(nextAccess);
@@ -127,7 +141,7 @@ export function SubjectsClient(): JSX.Element {
     return () => {
       active = false;
     };
-  }, [importId, subjectId]);
+  }, [importId, projectScope.projectId, subjectId]);
 
   const selectedSubject = useMemo(
     () => subjects.find((subject) => subject.id === subjectId) ?? null,
@@ -151,6 +165,7 @@ export function SubjectsClient(): JSX.Element {
 
   return (
     <div className="space-y-4">
+      <ProjectSelector {...projectScope} onChange={projectScope.setProjectId} />
       <div className="app-panel grid gap-4 p-4 lg:grid-cols-[0.9fr_0.9fr_1.2fr_1.4fr]">
         <label className="text-sm text-slate-300">
           <span className="mb-2 block text-xs uppercase tracking-[0.2em] text-brand-100">Type</span>
