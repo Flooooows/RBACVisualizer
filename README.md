@@ -184,12 +184,24 @@ The phase 1 SaaS data model is now present in the database:
 
 For now, if you create imports without an explicit SaaS project context, the backend automatically creates and reuses a **default workspace/project scope** so the current local flows keep working while explicit SaaS tenancy is being introduced.
 
+The frontend now exposes a minimal **project selector** and propagates `projectId` through the main views:
+
+- Dashboard
+- Imports
+- Graph
+- Subjects
+- Resources
+- Anomalies
+
+This means the UI is now able to work inside an explicit project scope instead of relying only on a global snapshot view.
+
 ## Quick manual test
 
 1. Open `http://localhost:3000/imports`
-2. Click `Load anomaly sample`
-3. Click `Create import snapshot`
-4. Verify these pages:
+2. Confirm the project selector is set to the expected project
+3. Click `Load anomaly sample`
+4. Click `Create import snapshot`
+5. Verify these pages:
 
 - `http://localhost:3000/anomalies`
 - `http://localhost:3000/graph`
@@ -223,11 +235,12 @@ How to use it:
 
 1. Ensure your local kubeconfig points to the cluster you want to inspect.
 2. Open `http://localhost:3000/imports`.
-3. Use the **Direct cluster import** block.
-4. Optionally provide:
+3. Confirm the project selector is set to the project you want to analyze.
+4. Use the **Direct cluster import** block.
+5. Optionally provide:
    - a kubeconfig path (for example `~/.kube/config`)
    - a context name
-5. Click **Import current cluster**.
+6. Click **Import current cluster**.
 
 The backend will fetch RBAC objects from the cluster and push them through the same normalization and anomaly pipeline as YAML imports.
 

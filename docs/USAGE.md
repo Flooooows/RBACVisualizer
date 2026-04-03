@@ -37,6 +37,18 @@ L’application contient 6 écrans principaux dans la navigation :
 
 Chaque écran répond à un besoin différent.
 
+### Portée projet (project scope)
+
+L’application introduit maintenant une première notion de **project scope** pour préparer le SaaS.
+
+Concrètement :
+
+- plusieurs vues affichent un sélecteur de projet
+- les imports, findings, sujets, ressources et graphes sont lus dans le projet courant
+- si tu ne choisis rien explicitement, un projet par défaut peut être utilisé pour garder un comportement simple en local
+
+Cela prépare la future multi-tenance sans casser les flows actuels.
+
 ---
 
 ## 3. Dashboard
@@ -87,6 +99,7 @@ C’est la porte d’entrée de l’application. On y charge les manifests RBAC 
 - le nombre de documents et findings
 - le détail d’un snapshot sélectionné
 - les warnings retournés par le backend
+- le projet courant utilisé pour l’import et la lecture des snapshots
 
 ### Quand l’utiliser
 
@@ -156,6 +169,7 @@ Il affiche la chaîne :
 ### Ce qu’on y trouve
 
 - sélection d’un sujet
+- sélection du projet courant
 - graphe React Flow
 - légende des types de nœuds
 - panneau de détail du nœud sélectionné
@@ -188,6 +202,7 @@ Cette vue est orientée **sujet**.
 - filtrer par namespace
 - rechercher un sujet par nom
 - sélectionner un sujet précis
+- changer de projet pour isoler l’analyse
 
 ### Ce que montre l’écran
 
@@ -215,6 +230,7 @@ Cette vue est orientée **ressource**.
 - chercher une ressource (`pods`, `secrets`, etc.)
 - choisir un verbe (`get`, `list`, `create`, etc.)
 - filtrer par namespace
+- changer de projet pour limiter la recherche au bon scope
 
 ### Ce que montre l’écran
 
@@ -246,6 +262,7 @@ Cette vue sert à repérer les problèmes ou risques RBAC détectés automatique
 - filtres par type
 - recherche texte
 - détail JSON de chaque finding
+- liens croisés vers le sujet et le graphe dans le même projet quand le contexte existe
 
 ### Types de findings déjà supportés
 

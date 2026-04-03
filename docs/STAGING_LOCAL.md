@@ -62,9 +62,10 @@ Open:
 ### Manifest import flow
 
 1. Go to `/imports`
-2. Load the anomaly sample
-3. Create an import snapshot
-4. Verify:
+2. Confirm the project selector is set to the expected project
+3. Load the anomaly sample
+4. Create an import snapshot
+5. Verify:
    - `/anomalies`
    - `/graph`
    - `/subjects`
@@ -82,9 +83,10 @@ npm run cluster:kind:seed
 
 Then in `/imports`:
 
-1. Optionally set context `kind-rbac-visualizer`
-2. Click `Check cluster status`
-3. Click `Import current cluster`
+1. Confirm the project selector is set to the expected project
+2. Optionally set context `kind-rbac-visualizer`
+3. Click `Check cluster status`
+4. Click `Import current cluster`
 
 Verify that findings, graph, subject access, and resource access views all populate correctly.
 
