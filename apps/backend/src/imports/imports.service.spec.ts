@@ -86,16 +86,16 @@ describe('ImportsService', () => {
   it('creates a snapshot with warning when roleRef is unresolved', async () => {
     const { service, prisma, tx } = createImportsServiceMock();
 
-    prisma.account.upsert.mockResolvedValue({ id: 'account-legacy' });
-    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-legacy' });
-    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-legacy' });
-    prisma.project.upsert.mockResolvedValue({ id: 'project-legacy' });
+    prisma.account.upsert.mockResolvedValue({ id: 'account-default' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-default' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-default' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-default' });
     prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
     prisma.importRun.create.mockResolvedValue({ id: 'import-run-1' });
 
     prisma.importSnapshot.create.mockResolvedValue({
       id: 'snapshot-1',
-      projectId: 'project-legacy',
+      projectId: 'project-default',
       importedAt: new Date('2026-04-01T00:00:00.000Z'),
     });
     prisma.importSnapshot.update.mockResolvedValue(undefined);
@@ -139,7 +139,7 @@ describe('ImportsService', () => {
     });
 
     expect(result.importId).toBe('snapshot-1');
-    expect(result.projectId).toBe('project-legacy');
+    expect(result.projectId).toBe('project-default');
     expect(result.importRunId).toBe('import-run-1');
     expect(result.status).toBe(SnapshotStatus.COMPLETED_WITH_WARNINGS);
     expect(result.summary.warningsCount).toBe(1);
@@ -157,16 +157,16 @@ describe('ImportsService', () => {
   it('creates anomaly findings for wildcard, empty, unused, and cluster-admin patterns', async () => {
     const { service, prisma, tx } = createImportsServiceMock();
 
-    prisma.account.upsert.mockResolvedValue({ id: 'account-legacy' });
-    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-legacy' });
-    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-legacy' });
-    prisma.project.upsert.mockResolvedValue({ id: 'project-legacy' });
+    prisma.account.upsert.mockResolvedValue({ id: 'account-default' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-default' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-default' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-default' });
     prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
     prisma.importRun.create.mockResolvedValue({ id: 'import-run-2' });
 
     prisma.importSnapshot.create.mockResolvedValue({
       id: 'snapshot-2',
-      projectId: 'project-legacy',
+      projectId: 'project-default',
       importedAt: new Date('2026-04-01T00:10:00.000Z'),
     });
     prisma.importSnapshot.update.mockResolvedValue(undefined);
@@ -231,7 +231,7 @@ describe('ImportsService', () => {
     });
 
     expect(result.status).toBe(SnapshotStatus.COMPLETED);
-    expect(result.projectId).toBe('project-legacy');
+    expect(result.projectId).toBe('project-default');
     expect(tx.analysisFinding.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -265,16 +265,16 @@ describe('ImportsService', () => {
   it('creates sensitive resource and excessive privilege findings', async () => {
     const { service, prisma, tx } = createImportsServiceMock();
 
-    prisma.account.upsert.mockResolvedValue({ id: 'account-legacy' });
-    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-legacy' });
-    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-legacy' });
-    prisma.project.upsert.mockResolvedValue({ id: 'project-legacy' });
+    prisma.account.upsert.mockResolvedValue({ id: 'account-default' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-default' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-default' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-default' });
     prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
     prisma.importRun.create.mockResolvedValue({ id: 'import-run-3' });
 
     prisma.importSnapshot.create.mockResolvedValue({
       id: 'snapshot-3',
-      projectId: 'project-legacy',
+      projectId: 'project-default',
       importedAt: new Date('2026-04-01T00:20:00.000Z'),
     });
     prisma.importSnapshot.update.mockResolvedValue(undefined);
@@ -320,7 +320,7 @@ describe('ImportsService', () => {
     });
 
     expect(result.status).toBe(SnapshotStatus.COMPLETED);
-    expect(result.projectId).toBe('project-legacy');
+    expect(result.projectId).toBe('project-default');
     expect(tx.analysisFinding.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -340,16 +340,16 @@ describe('ImportsService', () => {
   it('creates a cluster import from cluster reader results', async () => {
     const { service, clusterRbacReaderService, prisma, tx } = createImportsServiceMock();
 
-    prisma.account.upsert.mockResolvedValue({ id: 'account-legacy' });
-    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-legacy' });
-    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-legacy' });
-    prisma.project.upsert.mockResolvedValue({ id: 'project-legacy' });
+    prisma.account.upsert.mockResolvedValue({ id: 'account-default' });
+    prisma.workspace.upsert.mockResolvedValue({ id: 'workspace-default' });
+    prisma.workspaceMembership.upsert.mockResolvedValue({ id: 'membership-default' });
+    prisma.project.upsert.mockResolvedValue({ id: 'project-default' });
     prisma.importSnapshot.updateMany.mockResolvedValue({ count: 0 });
     prisma.importRun.create.mockResolvedValue({ id: 'import-run-cluster-1' });
 
     prisma.importSnapshot.create.mockResolvedValue({
       id: 'snapshot-cluster-1',
-      projectId: 'project-legacy',
+      projectId: 'project-default',
       importedAt: new Date('2026-04-01T00:30:00.000Z'),
     });
     prisma.importSnapshot.update.mockResolvedValue(undefined);
@@ -386,7 +386,7 @@ describe('ImportsService', () => {
       kubeconfigPath: '/tmp/test-kubeconfig',
     });
     expect(result.importId).toBe('snapshot-cluster-1');
-    expect(result.projectId).toBe('project-legacy');
+    expect(result.projectId).toBe('project-default');
     expect(result.importRunId).toBe('import-run-cluster-1');
     expect(result.sourceLabel).toBe('cluster:kind-rbac-visualizer');
   });

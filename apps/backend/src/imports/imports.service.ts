@@ -16,7 +16,7 @@ import { PrismaService } from '../persistence/prisma.service';
 import { ClusterRbacReaderService } from './cluster-rbac-reader.service';
 import { ClusterStatusDto } from './dto/cluster-status.dto';
 import { CreateClusterImportDto } from './dto/create-cluster-import.dto';
-import { ensureProjectScope } from './import.scope';
+import { ensureDefaultProjectScope } from './import.scope';
 import type {
   ImportIssue,
   PersistedImportResult,
@@ -147,7 +147,7 @@ export class ImportsService {
     contentType?: string;
   }): Promise<PersistedImportResult> {
     const parsed = parseImportRequest(input.body, input.contentType);
-    const projectId = await ensureProjectScope(this.prisma, parsed.projectId);
+    const projectId = await ensureDefaultProjectScope(this.prisma, parsed.projectId);
     const importRun = await this.prisma.importRun.create({
       data: {
         projectId,

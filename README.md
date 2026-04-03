@@ -182,7 +182,7 @@ The phase 1 SaaS data model is now present in the database:
 - `ClusterConnection`
 - `ImportRun`
 
-For now, if you create imports without an explicit SaaS project context, the backend automatically creates and reuses a **legacy workspace/project scope** so the existing local flows keep working while SaaS ownership is being introduced.
+For now, if you create imports without an explicit SaaS project context, the backend automatically creates and reuses a **default workspace/project scope** so the current local flows keep working while explicit SaaS tenancy is being introduced.
 
 ## Quick manual test
 

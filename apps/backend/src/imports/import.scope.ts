@@ -1,15 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 
-export const LEGACY_ACCOUNT_EMAIL = 'legacy@rbac-visualizer.local';
-export const LEGACY_WORKSPACE_SLUG = 'legacy-workspace';
-export const LEGACY_PROJECT_SLUG = 'legacy-project';
+export const DEFAULT_ACCOUNT_EMAIL = 'default@rbac-visualizer.local';
+export const DEFAULT_WORKSPACE_SLUG = 'default-workspace';
+export const DEFAULT_PROJECT_SLUG = 'default-project';
 
 type PrismaLike = Pick<
   PrismaClient,
   'account' | 'workspace' | 'workspaceMembership' | 'project' | 'importSnapshot'
 >;
 
-export async function ensureProjectScope(
+export async function ensureDefaultProjectScope(
   prisma: PrismaLike,
   requestedProjectId?: string | null,
 ): Promise<string> {
@@ -18,20 +18,20 @@ export async function ensureProjectScope(
   }
 
   const account = await prisma.account.upsert({
-    where: { email: LEGACY_ACCOUNT_EMAIL },
+    where: { email: DEFAULT_ACCOUNT_EMAIL },
     update: {},
     create: {
-      email: LEGACY_ACCOUNT_EMAIL,
-      displayName: 'Legacy Workspace Owner',
+      email: DEFAULT_ACCOUNT_EMAIL,
+      displayName: 'Default Workspace Owner',
     },
   });
 
   const workspace = await prisma.workspace.upsert({
-    where: { slug: LEGACY_WORKSPACE_SLUG },
+    where: { slug: DEFAULT_WORKSPACE_SLUG },
     update: {},
     create: {
-      slug: LEGACY_WORKSPACE_SLUG,
-      name: 'Legacy Workspace',
+      slug: DEFAULT_WORKSPACE_SLUG,
+      name: 'Default Workspace',
       ownerAccountId: account.id,
     },
   });
@@ -55,16 +55,16 @@ export async function ensureProjectScope(
     where: {
       workspaceId_slug: {
         workspaceId: workspace.id,
-        slug: LEGACY_PROJECT_SLUG,
+        slug: DEFAULT_PROJECT_SLUG,
       },
     },
     update: {},
     create: {
       workspaceId: workspace.id,
-      slug: LEGACY_PROJECT_SLUG,
-      name: 'Legacy Project',
+      slug: DEFAULT_PROJECT_SLUG,
+      name: 'Default Project',
       description:
-        'Default project used to scope snapshots created before full SaaS tenancy is enabled.',
+        'Default project used until explicit SaaS workspace/project selection is enabled.',
     },
   });
 
